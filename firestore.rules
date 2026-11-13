@@ -17,5 +17,14 @@ service cloud.firestore {
       allow write: if isBoard() && c in ['events','deadlines','tasks','board','forms','announcements',
         'dues','officerdues','players','attendance','carpools','scouting','settings'];
     }
+
+    // Sideline (abmendel.github.io/sideline): picks synced between devices under a long random
+    // sync code. Only someone holding the code can read or change that one document; nothing can
+    // be listed or deleted, and only the sport fields are accepted.
+    match /sideline/{code} {
+      allow get: if code.size() >= 20;
+      allow create, update: if code.size() >= 20
+        && request.resource.data.keys().hasOnly(['nba','nfl','mlb','nhl','soccer','updated']);
+    }
   }
 }

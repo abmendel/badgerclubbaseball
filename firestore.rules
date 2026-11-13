@@ -1,35 +1,21 @@
 rules_version = '2';
 // Badger Club Baseball HQ — Firestore security rules.
-// Board editors are listed in the document access/editors as { emails: [ ... ] }.
-// Only the owner (OWNER_EMAIL below) can change that list.
+// Two shared logins: the board password signs in as board@badgerclub.example,
+// the member password as member@badgerclub.example. No owner, no editors list.
 service cloud.firestore {
   match /databases/{database}/documents {
-    function signedIn() { return request.auth != null && request.auth.token.email_verified == true; }
-    function me() { return request.auth.token.email.lower(); }
-    function isOwner() { return signedIn() && me() == 'OWNER_EMAIL'; }
-    function isEditor() {
-      return isOwner() || (signedIn() &&
-        exists(/databases/$(database)/documents/access/editors) &&
-        me() in get(/databases/$(database)/documents/access/editors).data.emails);
-    }
+    function email() { return request.auth != null ? request.auth.token.email : ''; }
+    function isBoard() { return email() == 'board@badgerclub.example'; }
+    function isMember() { return isBoard() || email() == 'member@badgerclub.example'; }
 
-    // Anyone with the site password can view these (members' view).
     match /{c}/{id} {
-      allow read: if c in ['board','announcements','players','attendance','carpools','scouting','settings'];
-    }
-    // Board-only data: calendar, deadlines, tasks, dues, officer dues, form responses.
-    match /{c}/{id} {
-      allow read: if isEditor() && c in ['events','deadlines','tasks','dues','officerdues','forms'];
-    }
-    // Only board editors can change club data.
-    match /{c}/{id} {
-      allow write: if isEditor() && c in ['events','deadlines','tasks','board','forms','announcements',
+      // Member view: roster, board list, announcements, attendance, carpools, scouting, settings.
+      allow read: if (isMember() && c in ['board','announcements','players','attendance','carpools','scouting','settings'])
+                  // Board only: calendar, deadlines, tasks, dues, officer dues, form responses.
+                  || (isBoard() && c in ['events','deadlines','tasks','dues','officerdues','forms']);
+      // Only the board password can change anything.
+      allow write: if isBoard() && c in ['events','deadlines','tasks','board','forms','announcements',
         'dues','officerdues','players','attendance','carpools','scouting','settings'];
-    }
-    // The editors list: board can read it, only the owner can change it.
-    match /access/editors {
-      allow read: if isEditor();
-      allow write: if isOwner();
     }
   }
 }

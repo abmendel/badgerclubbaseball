@@ -457,7 +457,7 @@ table.t{width:100%;border-collapse:collapse;font-size:13px}
     <form id="gateform" autocomplete="off">
       <label for="pw" class="sub" style="text-align:left">Password</label>
       <input class="inp" id="pw" type="password" placeholder="Enter password" autofocus>
-      <button class="btn pri" type="submit" style="justify-content:center;height:42px">Enter dashboard</button>
+      <button class="btn pri" id="gatebtn" type="submit" style="justify-content:center;height:42px" disabled>Loading…</button>
       <div class="err" id="gateerr" role="alert"></div>
       <p class="hint">Board members use the board password. Club members use the member password to see the team tabs.</p>
     </form>
@@ -504,8 +504,9 @@ table.t{width:100%;border-collapse:collapse;font-size:13px}
 /* Two club passwords, stored only as hashes. They decide which tabs the page shows; who can actually read
    board data or change anything is enforced by Firebase (approved Google accounts, see firestore.rules). */
 const BUILD='20261111-1700';
-const PASSH={board:'1aa8168e205b3ba4160acfc3946660f4ed3bcbf76d4d1658db5b1ec4bb935494',member:'fbb38e58ef14df3227019fc32c55de0a16cba487550063c5a57a3cae466466d1'};
-const sha=async s=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode('bcb:'+s)))].map(b=>b.toString(16).padStart(2,'0')).join('');
+/* Two shared logins: the board password and the member password are checked by Firebase, never stored here */
+const BOARD_COLS=['events','deadlines','tasks','dues','officerdues','forms'];
+const ACCT={board:'board@badgerclub.example',member:'member@badgerclub.example'};
 /* Firebase project settings (Project settings → Your apps → Web app). These identify the project and are safe to publish. */
 const FIREBASE_CONFIG=null;
 const $=(s,r=document)=>r.querySelector(s);
@@ -571,7 +572,7 @@ const S={data:{D1:null,D2:null},events:[],deadlines:[],tasks:[],board:[],forms:[
 const COLS=['events','deadlines','tasks','board','forms','announcements','dues','officerdues','players','attendance','carpools','scouting','settings'];
 {const t=today();S.cal={y:t.getFullYear(),m:t.getMonth(),sel:todayS()};}
 const T=()=>S.data[S.team];
-const canEdit=()=>S.mode==='board'&&!!S.db&&S.canWrite!==false;
+const canEdit=()=>S.mode==='board'&&!!S.db;
 const E=h=>canEdit()?h:'';
 const tchip=t=>t==='D1'||t==='D2'?`<span class="tchip ${t.toLowerCase()}">${t}</span>`:t?`<span class="tchip">${esc(t)}</span>`:'';
 
@@ -616,12 +617,10 @@ const confirmDel=(what,fn)=>modal({title:`Delete ${what}?`,body:`<p class="sub" 
 async function write(fn){
   if(S.mode!=='board'){toast('Members can view only. Enter the board password to make changes.');return false}
   if(!S.db){toast('The club database isn’t connected yet.');return false}
-  if(!S.user){signIn();return false}
-  if(S.canWrite===false){toast(`${S.user.email} isn’t on the board editors list. Ask the site owner to add it.`);return false}
   try{await fn();return true}catch(e){
     const c=e&&e.code;
     if(c==='quota_exceeded'||c==='resource-exhausted')toast('The free database limit for today is used up. Try again tomorrow.');
-    else if(c==='permission-denied')toast('Only approved board accounts can make changes.');
+    else if(c==='permission-denied')toast('That change wasn’t allowed. Lock the dashboard and enter the board password again.');
     else if(c==='invalid_argument'||c==='invalid-argument')toast('That could not be saved. The item may be too large.');
     else if(c==='unavailable'){try{await new Promise(r=>setTimeout(r,600+Math.random()*600));await fn();return true}catch(_){toast('Connection hiccup. Try again in a moment.')}}
     else toast('Could not save. Try again.');
@@ -649,22 +648,31 @@ async function initCaps(){
       collection:c=>({add:d=>F.addDoc(F.collection(fs,c),enc(d)),onSnapshot:(ok,err)=>F.onSnapshot(F.collection(fs,c),{includeMetadataChanges:true},s=>ok(wrapSnap(s)),err)}),
       doc:p=>({set:d=>F.setDoc(F.doc(fs,p),enc(d)),update:d=>F.updateDoc(F.doc(fs,p),enc(d)),delete:()=>F.deleteDoc(F.doc(fs,p))})
     };
-    F.onAuthStateChanged(auth,async u=>{
-      S.user=u?{email:(u.email||'').toLowerCase(),name:u.displayName||u.email}:null;S.canWrite=u?null:false;S.gToken=null;
-      if(u){try{const a=await F.getDoc(F.doc(fs,'access/editors'));const list=(a.exists()&&a.data().emails||[]).map(x=>String(x).toLowerCase());S.canWrite=list.includes(S.user.email)}catch(e){S.canWrite=false}}
-      COLS.forEach(subscribe);S.capsDone=true;scheduleRender();
+    F.onAuthStateChanged(auth,u=>{
+      const e=u&&(u.email||'').toLowerCase();const mode=e===ACCT.board?'board':e===ACCT.member?'member':null;
+      S.authed=mode;S.capsDone=true;S.gToken=null;
+      if(mode){Object.keys(unsubs).forEach(k=>{try{unsubs[k]()}catch(_){}delete unsubs[k]});COLS.filter(c=>mode==='board'||!BOARD_COLS.includes(c)).forEach(subscribe);if(S.mode!==mode)unlock(mode);else scheduleRender()}
+      else{Object.keys(unsubs).forEach(k=>{try{unsubs[k]()}catch(_){}delete unsubs[k]});if(S.mode)showGate();else gateReady()}
     });
-  }catch(e){S.db=null;S.capsDone=true;scheduleRender()}
+  }catch(e){S.db=null;S.capsDone=true;gateReady();scheduleRender()}
 }
-async function signIn(){if(!FB)return;try{const p=new FB.F.GoogleAuthProvider();p.setCustomParameters({prompt:'select_account'});await FB.F.signInWithPopup(FB.auth,p)}catch(e){if(e&&e.code!=='auth/popup-closed-by-user')toast('Sign-in didn’t finish. Allow pop-ups for this site and try again.')}}
-async function signOutNow(){if(FB){await FB.F.signOut(FB.auth);toast('Signed out.')}}
+async function passwordSignIn(pw){
+  for(const mode of ['board','member']){
+    try{await FB.F.signInWithEmailAndPassword(FB.auth,ACCT[mode],pw);return mode}
+    catch(e){const c=e&&e.code;if(c==='auth/too-many-requests')throw e;if(c==='auth/network-request-failed')throw e}
+  }
+  return null;
+}
+async function lockNow(){S.mode=null;if(FB)try{await FB.F.signOut(FB.auth)}catch(_){}showGate()}
 /* A Google access token for reading the board's form-response sheets (asked for only when syncing) */
 async function googleToken(interactive){
   if(S.gToken&&S.gToken.exp>Date.now()+60e3)return S.gToken.t;
   if(!interactive||!FB)throw {code:'needs_token'};
   const p=new FB.F.GoogleAuthProvider();p.addScope('https://www.googleapis.com/auth/spreadsheets.readonly');p.addScope('https://www.googleapis.com/auth/drive.metadata.readonly');
-  if(S.user)p.setCustomParameters({login_hint:S.user.email});
-  const r=await FB.F.signInWithPopup(FB.auth,p);const cred=FB.F.GoogleAuthProvider.credentialFromResult(r);
+  p.setCustomParameters({prompt:'select_account'});
+  if(!FB.gauth)FB.gauth=FB.F.getAuth(FB.F.initializeApp(FIREBASE_CONFIG,'google-sheets'));
+  const r=await FB.F.signInWithPopup(FB.gauth,p);const cred=FB.F.GoogleAuthProvider.credentialFromResult(r);
+  FB.F.signOut(FB.gauth).catch(()=>{});
   if(!cred||!cred.accessToken)throw {code:'needs_token'};
   S.gToken={t:cred.accessToken,exp:Date.now()+50*60e3};return S.gToken.t;
 }
@@ -714,13 +722,11 @@ function renderNav(){
   const d=S.data.D1||S.data.D2;
   $('#sync').innerHTML=d?`<div><span class="dot"></span><b>NCBA data · D1 &amp; D2</b></div><div>${esc(d.season)} season · synced ${new Date(d.syncedAt).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}</div><div>Ask Claude to refresh it anytime.</div>`:`<div><span class="dot off"></span>Loading NCBA data…</div>`;
   const u=isBoard()?urgent():[];const b=$('#bellct');b.hidden=!u.length;b.textContent=u.length;
-  $('#merole').textContent=S.mode==='board'?(canEdit()?`Board · ${S.user?.email||'can edit'}`:S.user?'Board · view only':'Board · not signed in'):'Member · view only';
+  $('#merole').textContent=S.mode==='board'?'Board · can edit':'Member · view only';
   $('#teamseg').innerHTML=TEAMS.map(t=>`<button type="button" class="${S.team===t?'on':''}" data-team="${t}" aria-pressed="${S.team===t}">${t}</button>`).join('');
   const bn=[];
   if(S.mode==='board'){
     if(S.capsDone&&!S.db)bn.push('The club database isn’t connected yet, so board data and editing are unavailable.');
-    else if(S.capsDone&&!S.user)bn.push({h:'Sign in with your board Google account to see board data and make changes. <button class="btn sm pri" type="button" data-act="sign-in">Sign in with Google</button>'});
-    else if(S.user&&S.canWrite===false)bn.push({h:`${esc(S.user.email)} isn’t on the board editors list, so this is view-only. Ask the site owner to add it, or <button class="btn sm" type="button" data-act="sign-out">use another account</button>. Site owner? <button class="btn sm" type="button" data-act="manage-editors">Set up board editors</button>`});
   }
   if(COLS.some(c=>S.stale[c]))bn.push('Club data can’t be reached right now. What you see may be out of date; it will update on its own when the connection returns.');
   $('#banners').innerHTML=bn.map(t=>`<div class="banner">${typeof t==='string'?esc(t):t.h}</div>`).join('');
@@ -1216,7 +1222,7 @@ function vRefresh(){
   <div class="card" style="border-left:5px solid ${pending?'var(--warn)':'var(--good)'}"><div class="ch"><h3>Refresh status</h3></div>
     <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
       <div style="flex:1;min-width:260px">${pending?`<b>Refresh requested ${new Date(req.requestedAt).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}</b><div class="sub">Waiting for the stats files to be updated.${req.note?' Note: '+esc(req.note):''}</div>`:req.handledAt?`<b>Last full refresh ${new Date(req.handledAt).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}</b><div class="sub">No refresh waiting.</div>`:'<b>No refresh requested yet</b><div class="sub">Request one after a big weekend or when a new season starts.</div>'}</div>
-      ${E(`<button class="btn pri" data-act="refresh-request" type="button">${pending?'Update request':'Request full refresh'}</button>`)}<button class="btn" data-act="reload-data" type="button">Reload latest data</button>${E(`<button class="btn" data-act="import-backup" type="button">Import club data backup</button>`)}${S.user?`<button class="btn" data-act="manage-editors" type="button">Board editors</button>`:''}${S.user?`<button class="btn" data-act="sign-out" type="button">Sign out (${esc(S.user.email)})</button>`:''}
+      ${E(`<button class="btn pri" data-act="refresh-request" type="button">${pending?'Update request':'Request full refresh'}</button>`)}<button class="btn" data-act="reload-data" type="button">Reload latest data</button>${E(`<button class="btn" data-act="import-backup" type="button">Import club data backup</button>`)}${E(`<button class="btn" data-act="change-passwords" type="button">Change passwords</button>`)}
     </div>
     <p class="sub" style="margin:12px 0 0">The NCBA sites don’t let other pages read their data directly, so the stats are stored as files in the site’s GitHub repo (<code>data/d1.json</code> and <code>data/d2.json</code>). After you request a refresh, ask Claude in the site owner’s chat to “refresh the club dashboard stats”; it re-imports from NCBA and updates those files. When it’s done, press Reload latest data.</p>
   </div>
@@ -1236,22 +1242,32 @@ function refreshForm(){const r=S.settings.find(x=>x.id==='refresh')||{};
   <div class="field"><label for="rf-note">Note (optional)</label><input class="inp" id="rf-note" name="note" maxlength="200" value="${r.status==='pending'?esc(r.note||''):''}" placeholder="New spring rosters are up"></div>`,
   onSubmit:d=>upsert('settings','refresh',{status:'pending',requestedAt:Date.now(),note:d.note.trim()})})}
 
-/* ---------- board editors list (only the site owner can save it; Firestore rules enforce that) ---------- */
-async function manageEditors(){
-  if(!FB||!S.user){signIn();return}
-  let cur=[];try{const a=await FB.F.getDoc(FB.F.doc(FB.fs,'access/editors'));cur=a.exists()&&a.data().emails||[]}catch(e){}
-  if(!cur.includes(S.user.email))cur=[S.user.email,...cur];
-  modal({title:'Board editors',submit:'Save editors',body:`
-  <div class="field"><label for="ed-list">Google accounts that can sign in and edit (one per line)</label><textarea class="inp" id="ed-list" name="list" rows="8">${esc(cur.join('\n'))}</textarea></div>
-  <p class="sub" style="margin:0">Only the site owner can save this list. Everyone else with the password still sees the member view.</p>`,
-  onSubmit:async d=>{const emails=[...new Set(d.list.split(/[\s,;]+/).map(x=>x.trim().toLowerCase()).filter(x=>/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x)))];
-    if(!emails.length){toast('Add at least one email address.');return false}
-    try{await FB.F.setDoc(FB.F.doc(FB.fs,'access/editors'),{emails});S.canWrite=emails.includes(S.user.email);COLS.forEach(subscribe);scheduleRender();toast(`Saved ${emails.length} board editor${emails.length>1?'s':''}.`)}
-    catch(e){toast(e&&e.code==='permission-denied'?'Only the site owner can change the editors list.':'Couldn’t save the editors list. Try again.');return false}}})}
+/* ---------- change the shared passwords (anyone with the board password can) ---------- */
+function changePasswords(){
+  modal({title:'Change passwords',submit:'Save passwords',body:`
+  <p class="sub" style="margin:0 0 6px">Fill in only the one you want to change. Everyone will need the new password next time they sign in.</p>
+  <div class="field"><label for="cp-bcur">Current board password</label><input class="inp" id="cp-bcur" name="bcur" type="password" autocomplete="off"></div>
+  <div class="field"><label for="cp-bnew">New board password</label><input class="inp" id="cp-bnew" name="bnew" type="password" autocomplete="new-password"></div>
+  <div class="field"><label for="cp-mcur">Current member password</label><input class="inp" id="cp-mcur" name="mcur" type="password" autocomplete="off"></div>
+  <div class="field"><label for="cp-mnew">New member password</label><input class="inp" id="cp-mnew" name="mnew" type="password" autocomplete="new-password"></div>
+  <p class="sub" style="margin:0">At least 8 characters. Capital letters don’t matter.</p>`,
+  onSubmit:async d=>{
+    const n=x=>String(x||'').trim().toLowerCase();const bnew=n(d.bnew),mnew=n(d.mnew);
+    if(!bnew&&!mnew){toast('Enter a new board or member password.');return false}
+    if((bnew&&bnew.length<8)||(mnew&&mnew.length<8)){toast('New passwords need at least 8 characters.');return false}
+    if(bnew&&bnew===mnew){toast('The board and member passwords must be different.');return false}
+    const F=FB.F;const msg=e=>{const c=e&&e.code;return c==='auth/invalid-credential'||c==='auth/wrong-password'?'wrong':c==='auth/too-many-requests'?'busy':'fail'};
+    const done=[];
+    if(mnew){try{if(!FB.aauth)FB.aauth=F.getAuth(F.initializeApp(FIREBASE_CONFIG,'pw-change'));
+        await F.signInWithEmailAndPassword(FB.aauth,ACCT.member,n(d.mcur));await F.updatePassword(FB.aauth.currentUser,mnew);await F.signOut(FB.aauth);done.push('member')}
+      catch(e){const m=msg(e);toast(m==='wrong'?'The current member password isn’t right.':m==='busy'?'Too many tries. Wait a few minutes.':'Couldn’t change the member password. Try again.');return false}}
+    if(bnew){try{const u=FB.auth.currentUser;await F.reauthenticateWithCredential(u,F.EmailAuthProvider.credential(ACCT.board,n(d.bcur)));await F.updatePassword(u,bnew);done.push('board')}
+      catch(e){const m=msg(e);toast((done.length?'Member password changed, but the board one wasn’t: ':'')+(m==='wrong'?'the current board password isn’t right.':m==='busy'?'too many tries. Wait a few minutes.':'couldn’t change it. Try again.'));return false}}
+    toast(`${done.map(x=>x[0].toUpperCase()+x.slice(1)).join(' and ')} password changed.`)}})}
 
 /* ---------- one-time import of a JSON backup of the club's shared data ---------- */
 function importBackup(){
-  if(!canEdit()){toast('Sign in with an approved board account first.');return}
+  if(!canEdit()){toast('Enter the board password to import data.');return}
   const inp=document.createElement('input');inp.type='file';inp.accept='application/json,.json';
   inp.onchange=async()=>{const f=inp.files&&inp.files[0];if(!f)return;let data;try{data=JSON.parse(await f.text())}catch(e){toast('That file isn’t a valid backup.');return}
     const cols=Object.keys(data||{}).filter(c=>COLS.includes(c)&&Array.isArray(data[c]));let n=0;
@@ -1309,7 +1325,7 @@ async function syncForm(id,quiet){
   S.syncing[id]=true;S.syncMsg[id]='';scheduleRender();
   try{const grid=await readSheet(f,!quiet);const columns=grid[0].map((c,i)=>c.trim()||`Column ${i+1}`);const rows=grid.slice(1).filter(r=>r.some(v=>String(v).trim())).map(r=>columns.map((_,i)=>String(r[i]??'').slice(0,2000)));
     const v={columns,rows,syncedAt:Date.now()};if(JSON.stringify(v).length>240000)throw {code:'too_big'};
-    const ok=await updDoc('forms',id,v);if(ok&&!quiet)toast(`Synced ${rows.length} responses.`);
+    const ok=await updDoc('forms',id,v);if(ok&&!quiet)toast(`Synced ${rows.length} response${rows.length===1?"":"s"}.`);
   }catch(e){S.syncMsg[id]=e&&e.code==='too_big'?'This sheet has too many responses to store in one set. Split it or archive old responses.':gsMsg(e);if(!quiet)toast(S.syncMsg[id])}
   S.syncing[id]=false;scheduleRender();
 }
@@ -1587,10 +1603,8 @@ document.addEventListener('click',async e=>{
     case 'odues-settings':return oduesSettingsForm();
     case 'odues-edit':return oduesForm(id);
     case 'refresh-request':return refreshForm();
-    case 'sign-in':return signIn();
-    case 'sign-out':return signOutNow();
     case 'import-backup':return importBackup();
-    case 'manage-editors':return manageEditors();
+    case 'change-passwords':return changePasswords();
     case 'src-edit':return srcForm();
     case 'reload-data':toast('Reloading the latest data…');return loadData(true).then(()=>toast('Data reloaded.'));
     case 'edit-scout':return scoutForm(a.dataset.opp);
@@ -1628,11 +1642,16 @@ document.addEventListener('input',e=>{const el=e.target;
 
 /* ---------- gate ---------- */
 function unlock(mode){S.mode=mode;$('#gate').hidden=true;$('#app').hidden=false;const v=location.hash.slice(1);S.view=VIEWS.some(x=>x[0]===v)?v:'overview';renderAll()}
-$('#gateform').onsubmit=async e=>{e.preventDefault();const v=$('#pw').value.trim().toLowerCase();const h=await sha(v);
-  const mode=h===PASSH.board?'board':h===PASSH.member?'member':null;
-  if(mode){ss.set('bcb-mode',mode);$('#gateerr').textContent='';$('#pw').value='';unlock(mode)}else{$('#gateerr').textContent='That password isn’t right. Ask a board member for it.';$('#pw').select()}};
-$('#lockbtn').onclick=()=>{ss.del('bcb-mode');S.mode=null;$('#app').hidden=true;$('#gate').hidden=false;$('#pw').value='';$('#pw').focus()};
-{const m=ss.get('bcb-mode');if(m==='board'||m==='member')unlock(m);}
+function showGate(){S.mode=null;$('#app').hidden=true;$('#gate').hidden=false;$('#pw').value='';gateReady();$('#pw').focus()}
+function gateReady(){$('#gatebtn').disabled=false;$('#gatebtn').textContent='Enter dashboard';if(S.capsDone&&!S.db)$('#gateerr').textContent='The club database isn’t connected yet.'}
+$('#gateform').onsubmit=async e=>{e.preventDefault();const v=$('#pw').value.trim().toLowerCase();if(!v)return;
+  if(!FB){$('#gateerr').textContent=S.capsDone?'The club database isn’t connected yet.':'Still loading. Try again in a second.';return}
+  const btn=$('#gatebtn');btn.disabled=true;btn.textContent='Checking…';$('#gateerr').textContent='';
+  try{const mode=await passwordSignIn(v);
+    if(mode){$('#pw').value='';unlock(mode)}else{$('#gateerr').textContent='That password isn’t right. Ask a board member for it.';$('#pw').select()}}
+  catch(err){$('#gateerr').textContent=err&&err.code==='auth/too-many-requests'?'Too many tries. Wait a few minutes and try again.':'Couldn’t reach the club database. Check your connection.'}
+  btn.disabled=false;btn.textContent='Enter dashboard'};
+$('#lockbtn').onclick=()=>lockNow();
 initCaps();
 })();
 

@@ -1,0 +1,1641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Cache-Control" content="no-cache">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Badger Club Baseball HQ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: one frosted-glass shell floating over a warm field with a big stitched baseball; sidebar nav inside the shell, white glass cards inside main. Badger red is the single accent. */
+:root{
+  --red:#c5050c; --red-soft:rgba(197,5,12,.1); --red-rgb:197,5,12;
+  --ink:#2a1b17; --muted:#7c6862; --dim:#a8958e;
+  --bg:#f6e8de;
+  --good:#2b9257; --warn:#d9821a; --bad:#d23a2e; --info:#3a74c9;
+  --display:'Barlow Condensed','Arial Narrow',system-ui,sans-serif;
+  --body:'Plus Jakarta Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --shell:linear-gradient(160deg,rgba(255,255,255,.5),rgba(255,255,255,.26));
+  --card:linear-gradient(165deg,rgba(255,255,255,.82),rgba(255,255,255,.56));
+  --edge:rgba(255,255,255,.85); --line:rgba(90,40,25,.09); --line2:rgba(90,40,25,.14);
+  --shadow:0 24px 60px -32px rgba(120,50,20,.5);
+  --r:20px; --r-lg:30px;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:14px;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;cursor:pointer;background:none;border:0;padding:0}
+input,select,textarea{font:inherit;color:var(--ink)}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--red);outline-offset:2px;border-radius:8px}
+h1,h2,h3{text-wrap:balance;margin:0}
+.num{font-variant-numeric:tabular-nums}
+[hidden]{display:none!important}
+
+/* scene */
+.scene{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;
+  background:radial-gradient(900px 600px at 8% 0%,rgba(var(--red-rgb),.16),transparent 60%),
+  radial-gradient(800px 700px at 100% 100%,rgba(240,160,80,.35),transparent 60%),
+  linear-gradient(135deg,#fbf1ea 0%,#f4dccb 50%,#f8e9de 100%)}
+#bg{position:absolute;inset:0}
+
+/* gate */
+.gate{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:20px}
+.gatecard{width:min(400px,100%);padding:34px 30px 28px;border-radius:var(--r-lg);text-align:center;display:flex;flex-direction:column;gap:14px;align-items:center}
+.gatecard img{width:84px;height:auto;filter:drop-shadow(0 10px 20px rgba(var(--red-rgb),.3))}
+.gatecard h1{font-family:var(--display);font-size:34px;letter-spacing:.01em;line-height:1;text-transform:uppercase}
+.gatecard p{margin:0;color:var(--muted)}
+.gatecard form{display:flex;flex-direction:column;gap:10px;width:100%;margin-top:6px}
+.gatecard .err{color:var(--bad);font-size:13px;min-height:18px}
+
+.glass{background:var(--shell);-webkit-backdrop-filter:blur(26px) saturate(140%);backdrop-filter:blur(26px) saturate(140%);border:1px solid var(--edge);box-shadow:var(--shadow),inset 0 1px 0 rgba(255,255,255,.9)}
+.card{background:var(--card);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);border:1px solid var(--edge);border-radius:var(--r);box-shadow:0 14px 34px -26px rgba(120,50,20,.55),inset 0 1px 0 #fff;padding:18px;min-width:0}
+
+/* shell */
+.shell{position:relative;z-index:1;display:grid;grid-template-columns:236px minmax(0,1fr);max-width:1480px;margin:22px auto;border-radius:var(--r-lg);min-height:calc(100vh - 44px);overflow:hidden}
+.side{padding:22px 14px;display:flex;flex-direction:column;gap:4px;border-right:1px solid rgba(255,255,255,.6)}
+.brand{display:flex;align-items:center;gap:10px;padding:0 8px 18px}
+.brand img{width:38px;height:auto}
+.brand b{font-family:var(--display);font-size:21px;line-height:.95;text-transform:uppercase;letter-spacing:.01em}
+.brand small{display:block;font-size:11px;color:var(--muted);font-weight:500;margin-top:2px}
+.glabel{font-size:11px;font-weight:600;color:var(--dim);letter-spacing:.08em;text-transform:uppercase;padding:12px 10px 6px}
+.nav{display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;border-radius:12px;font-weight:600;font-size:13.5px;color:#5a4640;text-align:left;transition:background .15s}
+.nav svg{width:17px;height:17px;flex:none;opacity:.8}
+.nav:hover{background:rgba(255,255,255,.55)}
+.nav.on{background:rgba(255,255,255,.9);color:var(--ink);box-shadow:0 6px 16px -10px rgba(120,50,20,.5)}
+.nav.on svg{color:var(--red);opacity:1}
+.nav .ct{margin-left:auto;min-width:22px;height:20px;padding:0 6px;border-radius:999px;background:var(--red);color:#fff;font-size:11px;display:grid;place-items:center}
+.nav .ct.soft{background:rgba(90,40,25,.1);color:var(--muted)}
+.side .grow{flex:1;min-height:16px}
+.sync{border-radius:16px;padding:12px;background:rgba(255,255,255,.5);border:1px solid var(--edge);font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:6px}
+.sync b{color:var(--ink);font-weight:600}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--good);margin-right:6px;vertical-align:1px}
+.dot.warn{background:var(--warn)} .dot.off{background:var(--dim)}
+
+main{padding:22px 24px 30px;min-width:0;display:flex;flex-direction:column;gap:18px}
+.top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;position:relative;z-index:20}
+.search{display:flex;align-items:center;gap:8px;height:42px;padding:0 14px;border-radius:999px;background:rgba(255,255,255,.7);border:1px solid var(--edge);flex:1 1 260px;max-width:420px;position:relative}
+.search svg{width:16px;height:16px;color:var(--muted);flex:none}
+.search input{border:0;background:none;outline:0;flex:1;min-width:0}
+.results{position:absolute;left:0;right:0;top:48px;background:#fff;border-radius:16px;box-shadow:0 20px 50px -20px rgba(80,30,10,.45);padding:6px;display:flex;flex-direction:column;max-height:360px;overflow:auto}
+.results button{display:flex;gap:10px;align-items:center;padding:9px 10px;border-radius:10px;text-align:left}
+.results button:hover,.results button:focus-visible{background:var(--red-soft)}
+.results small{color:var(--muted);margin-left:auto;font-size:11.5px}
+.spacer{flex:1}
+.iconbtn{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.7);border:1px solid var(--edge);position:relative;flex:none}
+.iconbtn svg{width:17px;height:17px}
+.iconbtn .badge{position:absolute;top:-3px;right:-3px;min-width:18px;height:18px;border-radius:999px;background:var(--red);color:#fff;font-size:10.5px;font-weight:700;display:grid;place-items:center;padding:0 4px}
+.who{display:flex;align-items:center;gap:10px;padding:4px 14px 4px 4px;border-radius:999px;background:rgba(255,255,255,.7);border:1px solid var(--edge);height:42px}
+.avatar{width:34px;height:34px;border-radius:50%;background:var(--red);color:#fff;display:grid;place-items:center;font-weight:700;font-size:13px;flex:none}
+.who small{display:block;font-size:11px;color:var(--muted)}
+.who b{font-size:13px;font-weight:600}
+.pop{position:absolute;right:0;top:50px;width:340px;max-width:calc(100vw - 32px);background:#fff;border-radius:18px;box-shadow:0 24px 60px -24px rgba(80,30,10,.5);padding:12px;display:flex;flex-direction:column;gap:8px;max-height:70vh;overflow:auto}
+.pop h4{margin:2px 4px 4px;font-size:13px}
+
+.banner{padding:10px 14px;border-radius:14px;background:rgba(255,248,235,.85);border:1px solid rgba(217,130,26,.35);color:#7a4a0c;font-size:13px}
+
+.pagehead{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.pagehead h2{font-family:var(--display);font-size:34px;text-transform:uppercase;letter-spacing:.01em;line-height:1}
+.pagehead p{margin:4px 0 0;color:var(--muted)}
+
+/* buttons, inputs */
+.btn{height:38px;padding:0 16px;border-radius:999px;display:inline-flex;align-items:center;gap:7px;font-weight:600;font-size:13px;background:rgba(255,255,255,.85);border:1px solid var(--line2);white-space:nowrap}
+.btn:hover{background:#fff}
+.btn svg{width:15px;height:15px}
+.btn.pri{background:var(--red);color:#fff;border-color:var(--red);box-shadow:0 10px 22px -12px rgba(var(--red-rgb),.8)}
+.btn.pri:hover{filter:brightness(1.07)}
+.btn.sm{height:30px;padding:0 12px;font-size:12px}
+.btn.danger{color:var(--bad)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.mini{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;color:var(--muted)}
+.mini:hover{background:rgba(90,40,25,.07);color:var(--ink)}
+.mini svg{width:15px;height:15px}
+.field{display:flex;flex-direction:column;gap:5px;min-width:0}
+.field label{font-size:12px;font-weight:600;color:var(--muted)}
+.inp{height:40px;padding:0 12px;border-radius:12px;border:1px solid var(--line2);background:rgba(255,255,255,.92);outline:0;width:100%}
+textarea.inp{height:auto;min-height:90px;padding:10px 12px;resize:vertical}
+.inp:focus{border-color:rgba(var(--red-rgb),.55);box-shadow:0 0 0 3px rgba(var(--red-rgb),.12)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.seg{display:inline-flex;gap:2px;padding:4px;border-radius:999px;background:rgba(255,255,255,.6);border:1px solid var(--edge);flex-wrap:wrap}
+.seg button{padding:6px 13px;border-radius:999px;font-size:12.5px;font-weight:600;color:var(--muted)}
+.seg button.on{background:#fff;color:var(--ink);box-shadow:0 4px 12px -6px rgba(80,30,10,.4)}
+
+/* pills */
+.pill{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 9px;border-radius:999px;font-size:11.5px;font-weight:600;border:1px solid;white-space:nowrap}
+.p-low{color:var(--good);border-color:rgba(43,146,87,.4);background:rgba(43,146,87,.08)}
+.p-medium{color:var(--warn);border-color:rgba(217,130,26,.45);background:rgba(217,130,26,.08)}
+.p-high{color:var(--bad);border-color:rgba(210,58,46,.45);background:rgba(210,58,46,.08)}
+.p-neutral{color:var(--muted);border-color:var(--line2);background:rgba(255,255,255,.6)}
+.p-red{color:#fff;background:var(--red);border-color:var(--red)}
+.chip{display:inline-flex;align-items:center;height:24px;padding:0 9px;border-radius:8px;font-size:11.5px;font-weight:700;font-family:var(--body)}
+.chip.w{background:rgba(43,146,87,.14);color:var(--good)} .chip.l{background:rgba(210,58,46,.12);color:var(--bad)} .chip.t{background:rgba(90,40,25,.08);color:var(--muted)}
+
+/* cards */
+.ch{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.ch h3{font-size:12px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#5a4640}
+.ch .link{margin-left:auto;font-size:12.5px;font-weight:600;color:var(--muted);display:inline-flex;align-items:center;gap:4px}
+.ch .link:hover{color:var(--red)}
+.ch .link svg{width:13px;height:13px}
+.sub{color:var(--muted);font-size:12.5px}
+.empty{padding:18px;text-align:center;color:var(--muted);font-size:13px;border:1px dashed var(--line2);border-radius:14px;background:rgba(255,255,255,.35)}
+
+/* overview */
+.hero{display:grid;grid-template-columns:1.15fr 1fr 1fr 1fr;gap:14px}
+.hello{display:flex;flex-direction:column;gap:10px;justify-content:space-between}
+.hello .av{width:34px;height:34px;border-radius:50%;background:linear-gradient(140deg,#e2471f,var(--red));color:#fff;display:grid;place-items:center;font-weight:700}
+.hello h2{font-size:20px;font-weight:700}
+.kpi{display:flex;flex-direction:column;gap:6px}
+.kpi .lab{font-size:11px;font-weight:700;letter-spacing:.07em;color:var(--dim);text-transform:uppercase}
+.kpi .big{font-family:var(--display);font-size:44px;font-weight:600;line-height:.95;letter-spacing:.005em}
+.kpi .row{display:flex;align-items:flex-end;justify-content:space-between;gap:8px}
+.kpi svg.spark{width:110px;height:42px;flex:none}
+.delta{font-size:12px;font-weight:700}
+.delta.up{color:var(--good)} .delta.down{color:var(--bad)}
+.ovgrid{display:grid;grid-template-columns:minmax(0,1.9fr) minmax(280px,1fr);gap:14px;align-items:start}
+.col{display:flex;flex-direction:column;gap:14px;min-width:0}
+
+table.t{width:100%;border-collapse:collapse;font-size:13px}
+.t th{font-size:11px;font-weight:600;color:var(--dim);text-align:left;padding:0 8px 8px;white-space:nowrap}
+.t td{padding:10px 8px;border-top:1px solid var(--line);vertical-align:middle}
+.t tr.done td{color:var(--dim)} .t tr.done .ttl{text-decoration:line-through}
+.t .ttl{font-weight:600}
+.tw{overflow-x:auto}
+.chk{width:18px;height:18px;border-radius:6px;border:1.5px solid var(--line2);display:grid;place-items:center;background:#fff;flex:none}
+.chk.on{background:var(--red);border-color:var(--red);color:#fff}
+.chk svg{width:12px;height:12px}
+
+.timeline{display:flex;flex-direction:column;gap:12px}
+.tday{font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--dim);text-transform:uppercase}
+.titem{display:grid;grid-template-columns:62px 4px 1fr;gap:10px;align-items:start;font-size:13px}
+.titem .tm{color:var(--muted);font-size:12px;padding-top:1px}
+.titem .bar{width:4px;border-radius:4px;align-self:stretch;min-height:30px}
+.titem b{display:block;font-weight:600}
+.titem small{color:var(--muted)}
+
+.prog{height:8px;border-radius:999px;background:rgba(90,40,25,.08);overflow:hidden}
+.prog i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#e9573b,var(--red))}
+.prog.good i{background:linear-gradient(90deg,#48b874,var(--good))}
+.plist{display:flex;flex-direction:column;gap:12px}
+.prow{display:flex;flex-direction:column;gap:6px}
+.prow .top2{display:flex;justify-content:space-between;gap:8px;font-size:13px}
+.prow .top2 span{color:var(--muted);font-variant-numeric:tabular-nums}
+
+.std td:first-child{font-weight:600}
+.std tr.us td{background:var(--red-soft)}
+.std tr.us td:first-child{color:var(--red)}
+
+.ann{display:flex;flex-direction:column;gap:10px}
+.annitem{padding:12px 14px;border-radius:14px;background:rgba(255,255,255,.6);border:1px solid var(--line);display:flex;gap:10px}
+.annitem p{margin:0 0 4px;white-space:pre-wrap;overflow-wrap:anywhere}
+.annitem small{color:var(--muted)}
+.annitem .x{margin-left:auto}
+
+/* calendar */
+.calwrap{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:14px;align-items:start}
+.calhead{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.calhead h3{font-family:var(--display);font-size:26px;text-transform:uppercase;min-width:190px}
+.dow{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;font-size:11px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;padding:0 2px 6px}
+.week{display:flex;flex-direction:column;gap:4px;margin-bottom:6px}
+.series{font-size:11.5px;font-weight:700;color:var(--red);background:var(--red-soft);border:1px dashed rgba(var(--red-rgb),.35);border-radius:8px;padding:4px 8px;display:flex;gap:8px;align-items:center}
+.series span{font-weight:500;color:#8a4a44}
+.days{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.day{min-height:92px;border-radius:12px;background:rgba(255,255,255,.55);border:1px solid rgba(255,255,255,.8);padding:6px;display:flex;flex-direction:column;gap:3px;text-align:left;align-items:stretch;min-width:0}
+.day:hover{background:rgba(255,255,255,.85)}
+.day.out{opacity:.45}
+.day.sel{outline:2px solid var(--red);outline-offset:-2px}
+.day .dn{font-size:12px;font-weight:700;color:#6a554e}
+.day.today .dn{background:var(--red);color:#fff;border-radius:999px;width:22px;height:22px;display:grid;place-items:center}
+.ev{font-size:11px;font-weight:600;padding:2px 6px;border-radius:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-left:3px solid}
+.more{font-size:11px;color:var(--muted);padding-left:4px}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px;vertical-align:0}
+.dlist{display:flex;flex-direction:column;gap:8px}
+.ditem{padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.7);border:1px solid var(--line);border-left:4px solid;display:flex;gap:8px;align-items:flex-start}
+.ditem b{display:block;font-size:13.5px}
+.ditem small{display:block;color:var(--muted);font-size:12px;overflow-wrap:anywhere}
+.ditem .acts{margin-left:auto;display:flex}
+
+/* deadlines */
+.dlcards{display:flex;flex-direction:column;gap:10px}
+.dl{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;padding:14px 16px;border-radius:16px;background:var(--card);border:1px solid var(--edge);border-left:5px solid var(--line2)}
+.dl.overdue{border-left-color:var(--bad)} .dl.soon{border-left-color:var(--warn)} .dl.later{border-left-color:var(--good)} .dl.isdone{opacity:.6}
+.dl .when{font-family:var(--display);font-size:26px;line-height:1;text-align:center;min-width:54px}
+.dl .when small{display:block;font-family:var(--body);font-size:10.5px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.06em}
+.dl b{font-size:15px}
+.dl .meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:5px;font-size:12.5px;color:var(--muted)}
+.dl .notes{margin-top:6px;font-size:13px;color:#5a4640;white-space:pre-wrap;overflow-wrap:anywhere}
+.dl .acts{display:flex;gap:2px;align-items:center}
+.isdone b{text-decoration:line-through}
+
+/* tasks */
+.kanban{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:start}
+.lane{display:flex;flex-direction:column;gap:10px}
+.lanehead{display:flex;align-items:center;gap:8px;font-weight:700;font-size:13px;padding:0 4px}
+.lanehead i{width:10px;height:10px;border-radius:50%}
+.lanehead span{color:var(--muted);font-weight:600}
+.task{padding:14px;border-radius:16px;background:var(--card);border:1px solid var(--edge);display:flex;flex-direction:column;gap:9px;box-shadow:0 10px 24px -22px rgba(80,30,10,.6)}
+.task b{font-size:14px;overflow-wrap:anywhere}
+.task .meta{display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--muted)}
+.task input[type=range]{width:100%;accent-color:var(--red)}
+.task .foot{display:flex;align-items:center;gap:4px}
+.task .foot .pc{font-weight:700;font-size:12px;margin-right:auto;font-variant-numeric:tabular-nums}
+.hero4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.overall{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.overall .prog{flex:1;min-width:160px;height:12px}
+.overall .big{font-family:var(--display);font-size:38px;line-height:1}
+
+/* schedule */
+.serieslist{display:flex;flex-direction:column;gap:12px}
+.sercard{display:grid;grid-template-columns:150px 1fr auto;gap:16px;align-items:center}
+.sercard .wk{font-family:var(--display);font-size:22px;text-transform:uppercase;line-height:1}
+.sercard .wk small{display:block;font-family:var(--body);font-size:12px;color:var(--muted);text-transform:none;margin-top:4px}
+.sercard h4{margin:0 0 6px;font-size:17px}
+.games{display:flex;gap:8px;flex-wrap:wrap}
+.game{display:flex;align-items:center;gap:6px;padding:5px 8px 5px 5px;border-radius:10px;background:rgba(255,255,255,.7);border:1px solid var(--line);font-size:12.5px;text-decoration:none}
+.game:hover{border-color:rgba(var(--red-rgb),.4)}
+.game .sc{font-weight:700;font-variant-numeric:tabular-nums}
+.sres{text-align:right}
+.sres b{font-family:var(--display);font-size:26px;display:block;line-height:1}
+
+/* stats */
+.leaders{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.leader .v{font-family:var(--display);font-size:38px;line-height:1}
+.leader .n{font-weight:600;margin-top:4px}
+.leader small{color:var(--muted);font-size:12px}
+.bars{display:flex;flex-direction:column;gap:7px}
+.brow{display:grid;grid-template-columns:130px 1fr 52px;gap:10px;align-items:center;font-size:12.5px}
+.brow .bt{height:14px;border-radius:5px;background:rgba(90,40,25,.06);position:relative;overflow:hidden}
+.brow .bt i{position:absolute;left:0;top:0;bottom:0;border-radius:5px;background:linear-gradient(90deg,rgba(var(--red-rgb),.55),var(--red))}
+.brow .bv{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+.brow .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stattable th button{font-size:11px;font-weight:700;color:var(--dim);display:inline-flex;gap:3px;align-items:center}
+.stattable th button.on{color:var(--red)}
+.stattable td,.stattable th{text-align:right;white-space:nowrap}
+.stattable td:first-child,.stattable th:first-child{text-align:left;position:sticky;left:0;background:rgba(255,253,251,.96)}
+.stattable tr.tot td{font-weight:700;border-top:2px solid var(--line2)}
+.stattable tr.me td:first-child{color:var(--red)}
+.srcline{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
+.srcline a{font-weight:600;color:var(--ink)}
+.gc{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.gc .ic{width:42px;height:42px;border-radius:12px;background:var(--red-soft);color:var(--red);display:grid;place-items:center;flex:none}
+.gc .ic svg{width:20px;height:20px}
+
+/* roster */
+.rgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.player{display:flex;gap:12px;align-items:flex-start;padding:14px}
+.jersey{font-family:var(--display);font-size:34px;font-weight:700;line-height:1;width:48px;height:56px;border-radius:12px;background:linear-gradient(160deg,#e23a2a,var(--red));color:#fff;display:grid;place-items:center;flex:none;box-shadow:0 8px 18px -10px rgba(var(--red-rgb),.8)}
+.jersey.na{background:rgba(90,40,25,.1);color:var(--dim);font-size:22px;box-shadow:none}
+.player b{display:block;font-size:14.5px}
+.player .pos{font-size:12px;font-weight:700;color:var(--red);margin:2px 0 4px}
+.player small{display:block;color:var(--muted);font-size:12px;line-height:1.45}
+.board{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.bm{display:flex;gap:10px;align-items:center;padding:12px;border-radius:14px;background:rgba(255,255,255,.7);border:1px solid var(--line)}
+.bm b{display:block;font-size:13.5px}
+.bm small{display:block;color:var(--muted);font-size:12px;overflow-wrap:anywhere}
+.bm .acts{margin-left:auto;display:flex}
+
+/* responses */
+.formtabs{display:flex;gap:8px;flex-wrap:wrap}
+.formtab{padding:8px 12px;border-radius:12px;background:rgba(255,255,255,.6);border:1px solid var(--edge);text-align:left;font-size:13px;font-weight:600}
+.formtab small{display:block;font-weight:500;color:var(--muted);font-size:11.5px}
+.formtab.on{background:#fff;border-color:rgba(var(--red-rgb),.45);box-shadow:0 8px 18px -12px rgba(var(--red-rgb),.6)}
+.summ{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.summ h5{margin:0 0 8px;font-size:13px;overflow-wrap:anywhere}
+.resptable td{max-width:280px;overflow-wrap:anywhere;font-size:12.5px}
+.resptable th{position:sticky;top:0;background:rgba(255,253,251,.98)}
+.rtwrap{max-height:520px;overflow:auto}
+.howto{font-size:13px;color:#5a4640;line-height:1.55}
+.howto ol{margin:6px 0 0;padding-left:20px}
+
+/* modal + toast */
+.scrim{position:fixed;inset:0;z-index:60;background:rgba(60,25,15,.25);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);display:grid;place-items:center;padding:16px}
+.modal{width:min(520px,100%);max-height:calc(100vh - 32px);overflow:auto;background:rgba(255,252,250,.97);border-radius:24px;padding:22px;box-shadow:0 30px 80px -30px rgba(60,20,10,.6);display:flex;flex-direction:column;gap:14px}
+.modal h3{font-size:18px}
+.modal form{display:flex;flex-direction:column;gap:12px}
+.modal .acts{display:flex;gap:8px;justify-content:flex-end;margin-top:4px;flex-wrap:wrap}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:70;background:#2a1b17;color:#fff;padding:11px 18px;border-radius:999px;font-size:13px;box-shadow:0 14px 30px -12px rgba(0,0,0,.5);max-width:calc(100vw - 32px)}
+
+@media (max-width:1200px){.hero,.hero.hero4{grid-template-columns:1fr 1fr}.leaders{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:980px){
+  .shell{grid-template-columns:1fr;margin:12px;min-height:auto}
+  .side{flex-direction:row;overflow-x:auto;border-right:0;border-bottom:1px solid rgba(255,255,255,.6);padding:12px;gap:6px;align-items:center}
+  .brand{padding:0 8px 0 0}.brand div{display:none}
+  .glabel,.side .grow,.sync{display:none}
+  .nav{width:auto;white-space:nowrap}
+  .ovgrid,.calwrap{grid-template-columns:1fr}
+  .kanban{grid-template-columns:1fr}
+  .sercard{grid-template-columns:1fr;gap:8px}.sres{text-align:left}
+}
+@media (max-width:560px){
+  main{padding:16px}
+  .hero,.hero.hero4,.grid2,.leaders{grid-template-columns:1fr}
+  .who div{display:none}.who{padding-right:4px}
+  .day{min-height:64px}.ev{font-size:0;height:6px;padding:0;border-left-width:0}
+  .brow{grid-template-columns:96px 1fr 44px}
+  .dl{grid-template-columns:auto 1fr}.dl .acts{grid-column:1/-1;justify-content:flex-end}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* v2 additions */
+.teamseg{display:inline-flex;gap:2px;padding:4px;border-radius:999px;background:rgba(255,255,255,.7);border:1px solid var(--edge);height:42px;align-items:center}
+.teamseg button{height:32px;padding:0 14px;border-radius:999px;font-weight:700;font-size:13px;color:var(--muted);font-family:var(--display);letter-spacing:.04em;font-size:16px}
+.teamseg button.on{background:var(--red);color:#fff;box-shadow:0 6px 14px -8px rgba(var(--red-rgb),.8)}
+.tchip{display:inline-flex;align-items:center;height:18px;padding:0 6px;border-radius:6px;font-size:10.5px;font-weight:800;letter-spacing:.04em;background:rgba(90,40,25,.08);color:#6a554e;vertical-align:1px}
+.tchip.d1{background:rgba(var(--red-rgb),.12);color:var(--red)}
+.tchip.d2{background:rgba(58,116,201,.12);color:var(--info)}
+.gatecard .hint{font-size:12px;color:var(--muted);text-align:left;margin:0}
+.ro-note{font-size:12px;color:var(--muted);display:inline-flex;gap:6px;align-items:center}
+
+/* compare bars (matchups + national) */
+.cmpgrid{display:flex;flex-direction:column;gap:2px}
+.cmprow{display:grid;grid-template-columns:120px minmax(0,1fr) 104px minmax(0,1fr) 110px;gap:12px;align-items:center;padding:8px 0;border-top:1px solid var(--line);font-size:13px}
+.cmprow:first-child{border-top:0}
+.cmprow .lab b{display:block;font-size:13px}
+.cmprow .lab small{color:var(--dim);font-size:11px}
+.half{height:12px;border-radius:6px;background:rgba(90,40,25,.06);position:relative;overflow:visible}
+.half i{position:absolute;top:0;bottom:0;border-radius:6px}
+.half.us i{right:0;background:linear-gradient(270deg,var(--red),rgba(var(--red-rgb),.5))}
+.half.them i{left:0;background:linear-gradient(90deg,#7c6862,rgba(124,104,98,.45))}
+.half .nat{position:absolute;top:-4px;bottom:-4px;width:2px;background:#2a1b17;opacity:.45;border-radius:2px}
+.cmprow .vals{display:flex;justify-content:space-between;gap:8px;font-weight:700;font-variant-numeric:tabular-nums;font-size:12.5px}
+.cmprow .vals span:first-child{color:var(--red)}
+.edge{font-size:12px;font-weight:700;text-align:right}
+.edge.us{color:var(--good)} .edge.them{color:var(--bad)} .edge.even{color:var(--muted)}
+.cmphead{display:grid;grid-template-columns:120px minmax(0,1fr) 104px minmax(0,1fr) 110px;gap:12px;font-size:11px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;padding-bottom:6px}
+.vs{display:grid;grid-template-columns:1fr auto 1fr;gap:18px;align-items:center}
+.vs .side2{display:flex;flex-direction:column;gap:4px}
+.vs .side2.r{text-align:right;align-items:flex-end}
+.vs .nm2{font-family:var(--display);font-size:30px;text-transform:uppercase;line-height:1}
+.vs .vsmark{font-family:var(--display);font-size:22px;color:var(--dim)}
+.serchips{display:flex;gap:8px;flex-wrap:wrap}
+.serchip{padding:8px 12px;border-radius:12px;background:rgba(255,255,255,.6);border:1px solid var(--edge);text-align:left;font-size:13px;font-weight:600}
+.serchip small{display:block;font-weight:500;color:var(--muted);font-size:11.5px}
+.serchip.on{background:#fff;border-color:rgba(var(--red-rgb),.45);box-shadow:0 8px 18px -12px rgba(var(--red-rgb),.6)}
+.plist2{display:flex;flex-direction:column;gap:8px}
+.pl2{display:grid;grid-template-columns:1fr auto;gap:8px;font-size:13px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.6);border:1px solid var(--line)}
+.pl2 small{display:block;color:var(--muted);font-size:11.5px}
+.pl2 .st{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+.insights{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
+.insights li{padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.65);border:1px solid var(--line);border-left:4px solid var(--info);font-size:13.5px;line-height:1.45}
+.insights li.good{border-left-color:var(--good)} .insights li.bad{border-left-color:var(--bad)} .insights li.warn{border-left-color:var(--warn)}
+.natrow{display:grid;grid-template-columns:150px 70px 70px 80px 110px minmax(0,1fr);gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line);font-size:13px}
+.natrow.h{font-size:11px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;border-top:0;padding-top:0}
+.natrow b{font-variant-numeric:tabular-nums}
+.natrow .lab small{display:block;color:var(--dim);font-size:11px}
+.pctl{height:10px;border-radius:999px;background:linear-gradient(90deg,rgba(210,58,46,.18),rgba(217,130,26,.15) 50%,rgba(43,146,87,.2));position:relative}
+.pctl i{position:absolute;top:-4px;width:18px;height:18px;margin-left:-9px;border-radius:50%;background:#fff;border:3px solid var(--red);box-shadow:0 2px 6px rgba(0,0,0,.2)}
+.pctl .mid{position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:rgba(42,27,23,.3)}
+.diff.good{color:var(--good)} .diff.bad{color:var(--bad)} .diff{font-weight:700;font-variant-numeric:tabular-nums}
+
+/* dues */
+.money{font-family:var(--display);font-size:40px;line-height:1}
+.st-paid{color:var(--good);border-color:rgba(43,146,87,.4);background:rgba(43,146,87,.08)}
+.st-partial{color:var(--warn);border-color:rgba(217,130,26,.45);background:rgba(217,130,26,.08)}
+.st-unpaid{color:var(--bad);border-color:rgba(210,58,46,.45);background:rgba(210,58,46,.08)}
+.st-waived{color:var(--muted);border-color:var(--line2);background:rgba(255,255,255,.6)}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+
+/* attendance */
+.attwrap{display:grid;grid-template-columns:260px minmax(0,1fr);gap:14px;align-items:start}
+.sesslist{display:flex;flex-direction:column;gap:8px}
+.sess{padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.6);border:1px solid var(--edge);text-align:left;display:flex;flex-direction:column;gap:6px;width:100%}
+.sess.on{background:#fff;border-color:rgba(var(--red-rgb),.45)}
+.sess b{font-size:13.5px} .sess small{color:var(--muted);font-size:12px}
+.attrow{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.attrow .jn{font-family:var(--display);font-size:20px;color:var(--red);text-align:center}
+.pla{display:inline-flex;gap:3px}
+.pla button{width:32px;height:30px;border-radius:8px;font-weight:800;font-size:12px;border:1px solid var(--line2);background:#fff;color:var(--muted)}
+.pla button.on.P{background:var(--good);border-color:var(--good);color:#fff}
+.pla button.on.L{background:var(--warn);border-color:var(--warn);color:#fff}
+.pla button.on.A{background:var(--bad);border-color:var(--bad);color:#fff}
+.pla button.on.E{background:var(--info);border-color:var(--info);color:#fff}
+.mk{display:inline-grid;place-items:center;width:30px;height:24px;border-radius:7px;font-weight:800;font-size:12px;color:#fff}
+.mk.P{background:var(--good)} .mk.L{background:var(--warn)} .mk.A{background:var(--bad)} .mk.E{background:var(--info)} .mk.none{background:rgba(90,40,25,.1);color:var(--dim)}
+
+/* carpools */
+.trips{display:flex;flex-direction:column;gap:14px}
+.cars{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.car{padding:12px;border-radius:14px;background:rgba(255,255,255,.7);border:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
+.car .hd{display:flex;align-items:center;gap:8px}
+.car .hd b{font-size:14px}
+.seats{display:flex;gap:4px}
+.seats i{width:14px;height:14px;border-radius:4px;background:rgba(90,40,25,.12)}
+.seats i.f{background:var(--red)}
+.riders{display:flex;flex-direction:column;gap:4px;margin:0;padding:0;list-style:none}
+.riders li{display:flex;align-items:center;gap:6px;font-size:13px;padding:4px 6px;border-radius:8px;background:rgba(90,40,25,.04)}
+.riders li .mini{width:24px;height:24px;margin-left:auto}
+.addr{display:flex;gap:6px}
+.addr .inp{height:32px;font-size:12.5px}
+.quick{display:flex;gap:8px;flex-wrap:wrap}
+@media (max-width:980px){.attwrap{grid-template-columns:1fr}.cmprow,.cmphead{grid-template-columns:90px 1fr 56px 1fr 80px;gap:8px}.natrow{grid-template-columns:110px 56px 56px 64px 1fr}.natrow>:nth-child(6){display:none}}
+@media (max-width:560px){.cmprow,.cmphead{grid-template-columns:76px 1fr 1fr;}.cmprow .vals,.cmphead>:nth-child(3),.cmprow .edge,.cmphead>:nth-child(5){display:none}.vs{grid-template-columns:1fr}.vs .side2.r{text-align:left;align-items:flex-start}.natrow{grid-template-columns:96px 1fr 1fr 1fr}.natrow>:nth-child(5){display:none}}
+.st-unset{color:var(--muted);border-color:var(--line2);background:rgba(255,255,255,.6)}
+
+.rlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px}
+.rcard{padding:14px;border-radius:14px;background:rgba(255,255,255,.75);border:1px solid var(--line);display:flex;flex-direction:column;gap:4px;min-width:0}
+.rcard .rh b{display:block;font-size:14.5px}.rcard .rh small{color:var(--muted);font-size:12px}
+.rcard dl{margin:0}
+.rcard dt{font-size:11px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.04em;margin-top:8px}
+.rcard dd{margin:2px 0 0;font-size:13px;overflow-wrap:anywhere;white-space:pre-wrap}
+.fbtn{width:100%;text-align:left;border-radius:6px;padding:2px 4px}
+.fbtn:hover{background:var(--red-soft)}.fbtn.on{background:var(--red-soft);outline:1px solid rgba(var(--red-rgb),.4)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:980px){.two{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="scene" aria-hidden="true"><canvas id="bg"></canvas></div>
+
+<div class="gate" id="gate">
+  <div class="gatecard glass">
+    <img src="assets/logo.png" alt="Wisconsin W logo">
+    <h1>Badger Club Baseball</h1>
+    <p>University of Wisconsin–Madison · D1 &amp; D2 Team HQ</p>
+    <form id="gateform" autocomplete="off">
+      <label for="pw" class="sub" style="text-align:left">Password</label>
+      <input class="inp" id="pw" type="password" placeholder="Enter password" autofocus>
+      <button class="btn pri" type="submit" style="justify-content:center;height:42px">Enter dashboard</button>
+      <div class="err" id="gateerr" role="alert"></div>
+      <p class="hint">Board members use the board password. Club members use the member password to see the team tabs.</p>
+    </form>
+  </div>
+</div>
+
+<div class="shell glass" id="app" hidden>
+  <aside class="side">
+    <div class="brand"><img src="assets/logo.png" alt=""><div><b>Badger Club<br>Baseball</b><small>UW–Madison · NCBA D1 &amp; D2</small></div></div>
+    <div class="glabel">Team</div>
+    <nav class="group" id="nav1"></nav>
+    <div class="glabel">Club board</div>
+    <nav class="group" id="nav2"></nav>
+    <div class="grow"></div>
+    <div class="sync" id="sync"></div>
+    <button class="nav" id="lockbtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Lock dashboard</button>
+  </aside>
+  <main>
+    <div class="top">
+      <div class="search" id="searchbox">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="q" placeholder="Search players, tasks, deadlines, events" aria-label="Search the dashboard">
+        <div class="results" id="results" hidden></div>
+      </div>
+      <div class="teamseg" id="teamseg" role="group" aria-label="Team"></div>
+      <div class="spacer"></div>
+      <div style="position:relative">
+        <button class="iconbtn" id="bell" type="button" aria-label="Upcoming deadlines"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="badge" id="bellct" hidden></span></button>
+        <div class="pop" id="bellpop" hidden></div>
+      </div>
+      <div class="who"><div class="avatar">B</div><div><b>Badger</b><small id="merole">Signed in</small></div></div>
+    </div>
+    <div id="banners"></div>
+    <div id="view" style="display:flex;flex-direction:column;gap:18px"></div>
+  </main>
+</div>
+
+<div id="modalroot"></div>
+<div class="toast" id="toast" hidden role="status"></div>
+
+<script>
+(()=>{
+'use strict';
+/* Two club passwords, stored only as hashes. They decide which tabs the page shows; who can actually read
+   board data or change anything is enforced by Firebase (approved Google accounts, see firestore.rules). */
+const BUILD='20261111-1700';
+const PASSH={board:'1aa8168e205b3ba4160acfc3946660f4ed3bcbf76d4d1658db5b1ec4bb935494',member:'fbb38e58ef14df3227019fc32c55de0a16cba487550063c5a57a3cae466466d1'};
+const sha=async s=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode('bcb:'+s)))].map(b=>b.toString(16).padStart(2,'0')).join('');
+/* Firebase project settings (Project settings → Your apps → Web app). These identify the project and are safe to publish. */
+const FIREBASE_CONFIG=null;
+const $=(s,r=document)=>r.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad=n=>String(n).padStart(2,'0');
+const ymd=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const pd=s=>{const [y,m,d]=String(s).split('-').map(Number);return new Date(y,(m||1)-1,d||1)};
+const today=()=>{const d=new Date();d.setHours(0,0,0,0);return d};
+const todayS=()=>ymd(today());
+const daysUntil=s=>Math.round((pd(s)-today())/864e5);
+const fmtD=(s,o={month:'short',day:'numeric'})=>s?pd(s).toLocaleDateString('en-US',o):'';
+const fmtT=t=>{if(!t)return'';let[h,m]=t.split(':').map(Number);const ap=h>=12?'PM':'AM';h=h%12||12;return `${h}:${pad(m)} ${ap}`};
+const rel=n=>n===0?'Today':n===1?'Tomorrow':n===-1?'1 day overdue':n>0?`In ${n} days`:`${-n} days overdue`;
+const first=n=>{const p=String(n||'').split(',');return p.length>1?`${p[1].trim()} ${p[0].trim()}`:String(n||'')};
+const slug=s=>String(s||'').toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,80)||'x';
+const money=n=>'$'+(Math.round((Number(n)||0)*100)/100).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2});
+const ss={get(k){try{return sessionStorage.getItem(k)}catch(e){return null}},set(k,v){try{sessionStorage.setItem(k,v)}catch(e){}},del(k){try{sessionStorage.removeItem(k)}catch(e){}}};
+const own=(o,k)=>o&&Object.prototype.hasOwnProperty.call(o,k);
+
+const I={
+ grid:'<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
+ cal:'<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+ flag:'<path d="M4 22V4a1 1 0 0 1 1-1h12l-2 5 2 5H5"/>',
+ tasks:'<path d="M9 6h11M9 12h11M9 18h11"/><path d="m3 6 1.5 1.5L7 5M3 12l1.5 1.5L7 11M3 18l1.5 1.5L7 17"/>',
+ sched:'<circle cx="12" cy="12" r="9"/><path d="M5.6 5.6c3 2.4 3 10.4 0 12.8M18.4 5.6c-3 2.4-3 10.4 0 12.8"/>',
+ stats:'<path d="M3 21h18"/><rect x="5" y="11" width="3" height="7" rx="1"/><rect x="10.5" y="6" width="3" height="12" rx="1"/><rect x="16" y="13" width="3" height="5" rx="1"/>',
+ users:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18.5 14.8c1.6.8 2.6 2.6 3 5.2"/>',
+ inbox:'<path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5h13L22 12v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6z"/>',
+ vs:'<path d="M4 4l6 16M20 4l-6 16"/><path d="M8 12h8"/>',
+ globe:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.8 3 2.8 15 0 18M12 3c-2.8 3-2.8 15 0 18"/>',
+ dollar:'<path d="M12 2v20"/><path d="M17 6H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',
+ check2:'<rect x="3" y="3" width="18" height="18" rx="3"/><path d="m8 12 3 3 5-6"/>',
+ car:'<path d="M5 17h14v-5l-2-5H7l-2 5z"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/><path d="M5 12h14"/>',
+ plus:'<path d="M12 5v14M5 12h14"/>', x:'<path d="M18 6 6 18M6 6l12 12"/>',
+ trash:'<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>',
+ edit:'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+ ext:'<path d="M14 3h7v7M21 3l-9 9"/><path d="M19 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5"/>',
+ left:'<path d="m15 18-6-6 6-6"/>', right:'<path d="m9 18 6-6-6-6"/>',
+ check:'<path d="M20 6 9 17l-5-5"/>', eye:'<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+ link:'<path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/>',
+ refresh:'<path d="M21 12a9 9 0 1 1-2.6-6.4L21 8"/><path d="M21 3v5h-5"/>',
+ mega:'<path d="M3 11v2a1 1 0 0 0 1 1h3l6 4V6L7 10H4a1 1 0 0 0-1 1z"/><path d="M17 8a5 5 0 0 1 0 8"/>'
+};
+const ic=(n,extra='')=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ${extra}>${I[n]}</svg>`;
+
+const VIEWS=[
+ ['overview','Overview','grid',1],['schedule','Schedule','sched',1],['matchups','Matchups','vs',1],['stats','Team stats','stats',1],['national','National ranks','globe',1],['roster','Roster','users',1],
+ ['calendar','Calendar','cal',2],['deadlines','Deadlines','flag',2],['tasks','Task tracker','tasks',2],['dues','Player dues','dollar',2],['officerdues','Officer dues','dollar',2],['attendance','Attendance','check2',2],['carpools','Carpools','car',2],['responses','Form responses','inbox',2],['refresh','Data refresh','refresh',2]
+];
+const BOARD_ONLY=new Set(['calendar','deadlines','tasks','dues','officerdues','responses','refresh']);
+const allowed=v=>S.mode==='board'||!BOARD_ONLY.has(v);
+const isBoard=()=>S.mode==='board';
+const EVTYPES={Practice:'#c5050c',Game:'#7a1f1a',Meeting:'#3a74c9',Fundraiser:'#2b9257',Social:'#d9821a',Other:'#8a7a74'};
+const evColor=t=>own(EVTYPES,t)?EVTYPES[t]:EVTYPES.Other;
+const PRI=['Low','Medium','High'];
+const TEAMS=['D1','D2'];
+const MARKS={P:'Present',L:'Late',A:'Absent',E:'Excused'};
+
+const S={data:{D1:null,D2:null},events:[],deadlines:[],tasks:[],board:[],forms:[],announcements:[],dues:[],officerdues:[],players:[],attendance:[],carpools:[],scouting:[],settings:[],syncing:{},syncMsg:{},autoSynced:new Set(),gsKeys:null,formView:'cards',formLatest:false,formFilter:null,
+ loaded:{},stale:{},fromCache:{},err:{},db:null,user:null,canWrite:null,capsDone:false,
+ mode:null,team:ss.get('bcb-team')==='D2'?'D2':'D1',view:'overview',cal:null,dlFilter:'upcoming',statTab:'hitting',sort:{hitting:{k:'AVG',d:-1},pitching:{k:'ERA',d:1}},
+ rpos:'all',ryr:'all',rq:'',formSel:null,formQ:'',mSel:{D1:null,D2:null},duesF:'all',duesT:'all',duesQ:'',sessSel:{D1:null,D2:null}};
+const COLS=['events','deadlines','tasks','board','forms','announcements','dues','officerdues','players','attendance','carpools','scouting','settings'];
+{const t=today();S.cal={y:t.getFullYear(),m:t.getMonth(),sel:todayS()};}
+const T=()=>S.data[S.team];
+const canEdit=()=>S.mode==='board'&&!!S.db&&S.canWrite!==false;
+const E=h=>canEdit()?h:'';
+const tchip=t=>t==='D1'||t==='D2'?`<span class="tchip ${t.toLowerCase()}">${t}</span>`:t?`<span class="tchip">${esc(t)}</span>`:'';
+
+/* ---------- background ---------- */
+function drawBg(){
+  const c=$('#bg');const dpr=Math.min(2,window.devicePixelRatio||1);const w=innerWidth,h=innerHeight;
+  c.width=w*dpr;c.height=h*dpr;c.style.width=w+'px';c.style.height=h+'px';
+  const x=c.getContext('2d');x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,w,h);
+  const cx=-w*.04,cy=h*1.06,L=Math.max(w,h)*.62;
+  for(let i=0;i<30;i++){const a=-Math.PI*.5+i*(Math.PI*.5/29);const ex=cx+Math.cos(a)*L,ey=cy+Math.sin(a)*L;
+    const g=x.createLinearGradient(cx,cy,ex,ey);g.addColorStop(0,'rgba(232,140,70,0)');g.addColorStop(.55,'rgba(236,150,80,.26)');g.addColorStop(1,'rgba(252,215,170,.04)');
+    x.strokeStyle=g;x.lineWidth=16;x.lineCap='round';x.beginPath();x.moveTo(cx,cy);x.lineTo(ex,ey);x.stroke();}
+  const R=Math.min(w,h)*.34,bx=w-R*.3,by=R*.22;
+  const bg=x.createRadialGradient(bx-R*.35,by-R*.35,R*.1,bx,by,R);bg.addColorStop(0,'rgba(255,255,255,.95)');bg.addColorStop(1,'rgba(238,214,198,.85)');
+  x.fillStyle=bg;x.beginPath();x.arc(bx,by,R,0,Math.PI*2);x.fill();
+  x.save();x.beginPath();x.arc(bx,by,R,0,Math.PI*2);x.clip();
+  [[bx-R*1.5,by+R*.15],[bx+R*1.5,by-R*.15]].forEach(([sx,sy])=>{const sr=R*1.04;
+    x.strokeStyle='rgba(197,5,12,.42)';x.lineWidth=2;x.beginPath();x.arc(sx,sy,sr,0,Math.PI*2);x.stroke();
+    for(let t=0;t<Math.PI*2;t+=.075){const px=sx+Math.cos(t)*sr,py=sy+Math.sin(t)*sr;if(Math.hypot(px-bx,py-by)>R*.96)continue;
+      const nx=Math.cos(t),ny=Math.sin(t),tx=-ny,ty=nx,k=R*.035;
+      x.beginPath();x.moveTo(px+nx*k*1.6-tx*k,py+ny*k*1.6-ty*k);x.lineTo(px,py);x.lineTo(px-nx*k*1.6-tx*k,py-ny*k*1.6-ty*k);x.stroke();}
+  });x.restore();
+}
+addEventListener('resize',()=>{clearTimeout(drawBg.t);drawBg.t=setTimeout(drawBg,120)});
+drawBg();
+
+/* ---------- toast + modal ---------- */
+function toast(m){const t=$('#toast');t.textContent=m;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>t.hidden=true,3800)}
+function modal({title,body,submit='Save',danger=false,onSubmit,wide=false}){
+  const root=$('#modalroot');
+  root.innerHTML=`<div class="scrim" id="scrim"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="mt" ${wide?'style="width:min(720px,100%)"':''}><h3 id="mt">${esc(title)}</h3><form id="mform" novalidate>${body}<div class="acts"><button type="button" class="btn" id="mcancel">Cancel</button><button type="submit" class="btn ${danger?'danger':'pri'}" id="msubmit">${esc(submit)}</button></div></form></div></div>`;
+  const close=()=>{root.innerHTML='';document.removeEventListener('keydown',onKey)};
+  const onKey=e=>{if(e.key==='Escape')close()};document.addEventListener('keydown',onKey);
+  $('#mcancel').onclick=close;$('#scrim').onclick=e=>{if(e.target.id==='scrim')close()};
+  $('#mform').onsubmit=async e=>{e.preventDefault();const fd=Object.fromEntries(new FormData(e.target).entries());
+    const b=$('#msubmit');b.disabled=true;const ok=await onSubmit(fd,e.target);if(ok!==false)close();else b.disabled=false};
+  const f=$('#mform input:not([type=hidden]),#mform textarea,#mform select');if(f)f.focus();
+}
+const confirmDel=(what,fn)=>modal({title:`Delete ${what}?`,body:`<p class="sub" style="margin:0">This removes it for everyone on the dashboard.</p>`,submit:'Delete',danger:true,onSubmit:fn});
+
+/* ---------- data layer ---------- */
+async function write(fn){
+  if(S.mode!=='board'){toast('Members can view only. Enter the board password to make changes.');return false}
+  if(!S.db){toast('The club database isn’t connected yet.');return false}
+  if(!S.user){signIn();return false}
+  if(S.canWrite===false){toast(`${S.user.email} isn’t on the board editors list. Ask the site owner to add it.`);return false}
+  try{await fn();return true}catch(e){
+    const c=e&&e.code;
+    if(c==='quota_exceeded'||c==='resource-exhausted')toast('The free database limit for today is used up. Try again tomorrow.');
+    else if(c==='permission-denied')toast('Only approved board accounts can make changes.');
+    else if(c==='invalid_argument'||c==='invalid-argument')toast('That could not be saved. The item may be too large.');
+    else if(c==='unavailable'){try{await new Promise(r=>setTimeout(r,600+Math.random()*600));await fn();return true}catch(_){toast('Connection hiccup. Try again in a moment.')}}
+    else toast('Could not save. Try again.');
+    return false}
+}
+const addDoc=(c,d)=>write(()=>S.db.collection(c).add({...d,createdAt:Date.now()}));
+const setDoc=(c,id,d)=>write(()=>S.db.doc(`${c}/${id}`).set({...d,updatedAt:Date.now()}));
+const updDoc=(c,id,d)=>write(()=>S.db.doc(`${c}/${id}`).update({...d,updatedAt:Date.now()}));
+const delDoc=(c,id)=>write(()=>S.db.doc(`${c}/${id}`).delete());
+const upsert=(c,id,d)=>{const ex=S[c].find(x=>x.id===id);return ex?updDoc(c,id,d):setDoc(c,id,d)};
+
+let rq=0;function scheduleRender(){if(rq)return;rq=requestAnimationFrame(()=>{rq=0;renderAll()})}
+/* Firestore can't store arrays inside arrays (form response rows), so those are kept as JSON text */
+const enc=v=>Array.isArray(v)?(v.some(Array.isArray)?{__json:JSON.stringify(v)}:v.map(enc)):(v&&typeof v==='object')?Object.fromEntries(Object.entries(v).map(([k,x])=>[k,enc(x)])):v;
+const dec=v=>Array.isArray(v)?v.map(dec):(v&&typeof v==='object')?('__json' in v&&Object.keys(v).length===1?JSON.parse(v.__json):Object.fromEntries(Object.entries(v).map(([k,x])=>[k,dec(x)]))):v;
+let FB=null;const unsubs={};
+async function initCaps(){
+  try{
+    if(!FIREBASE_CONFIG)throw 0;
+    const F=await import('./vendor/firebase.js');
+    const app=F.initializeApp(FIREBASE_CONFIG),fs=F.initializeFirestore(app,{ignoreUndefinedProperties:true}),auth=F.getAuth(app);
+    FB={F,fs,auth};
+    const wrapSnap=s=>({metadata:s.metadata,docs:s.docs.map(d=>({id:d.id,data:()=>dec(d.data())}))});
+    S.db={
+      collection:c=>({add:d=>F.addDoc(F.collection(fs,c),enc(d)),onSnapshot:(ok,err)=>F.onSnapshot(F.collection(fs,c),{includeMetadataChanges:true},s=>ok(wrapSnap(s)),err)}),
+      doc:p=>({set:d=>F.setDoc(F.doc(fs,p),enc(d)),update:d=>F.updateDoc(F.doc(fs,p),enc(d)),delete:()=>F.deleteDoc(F.doc(fs,p))})
+    };
+    F.onAuthStateChanged(auth,async u=>{
+      S.user=u?{email:(u.email||'').toLowerCase(),name:u.displayName||u.email}:null;S.canWrite=u?null:false;S.gToken=null;
+      if(u){try{const a=await F.getDoc(F.doc(fs,'access/editors'));const list=(a.exists()&&a.data().emails||[]).map(x=>String(x).toLowerCase());S.canWrite=list.includes(S.user.email)}catch(e){S.canWrite=false}}
+      COLS.forEach(subscribe);S.capsDone=true;scheduleRender();
+    });
+  }catch(e){S.db=null;S.capsDone=true;scheduleRender()}
+}
+async function signIn(){if(!FB)return;try{const p=new FB.F.GoogleAuthProvider();p.setCustomParameters({prompt:'select_account'});await FB.F.signInWithPopup(FB.auth,p)}catch(e){if(e&&e.code!=='auth/popup-closed-by-user')toast('Sign-in didn’t finish. Allow pop-ups for this site and try again.')}}
+async function signOutNow(){if(FB){await FB.F.signOut(FB.auth);toast('Signed out.')}}
+/* A Google access token for reading the board's form-response sheets (asked for only when syncing) */
+async function googleToken(interactive){
+  if(S.gToken&&S.gToken.exp>Date.now()+60e3)return S.gToken.t;
+  if(!interactive||!FB)throw {code:'needs_token'};
+  const p=new FB.F.GoogleAuthProvider();p.addScope('https://www.googleapis.com/auth/spreadsheets.readonly');p.addScope('https://www.googleapis.com/auth/drive.metadata.readonly');
+  if(S.user)p.setCustomParameters({login_hint:S.user.email});
+  const r=await FB.F.signInWithPopup(FB.auth,p);const cred=FB.F.GoogleAuthProvider.credentialFromResult(r);
+  if(!cred||!cred.accessToken)throw {code:'needs_token'};
+  S.gToken={t:cred.accessToken,exp:Date.now()+50*60e3};return S.gToken.t;
+}
+async function gapi(url,interactive){
+  const t=await googleToken(interactive);const r=await fetch(url,{headers:{Authorization:'Bearer '+t}});
+  if(r.status===401){S.gToken=null;throw {code:'needs_token'}}
+  if(!r.ok){let m='';try{m=(await r.json()).error?.message||''}catch(_){};throw {code:r.status===403?(/has not been used|is disabled/i.test(m)?'api_off':'no_access'):r.status===404?'not_found':'google_error'}}
+  return r.json();
+}
+function subscribe(c){
+  if(unsubs[c]){unsubs[c]();delete unsubs[c]}
+  S.loaded[c]=false;S.err[c]=null;
+  const t=setTimeout(()=>{if(!S.loaded[c]||S.fromCache[c]){S.stale[c]=true;scheduleRender()}},10000);
+  unsubs[c]=S.db.collection(c).onSnapshot(snap=>{
+    S.fromCache[c]=snap.metadata.fromCache;
+    if(!snap.metadata.fromCache){clearTimeout(t);S.stale[c]=false}
+    S[c]=snap.docs.map(d=>({id:d.id,...d.data()}));S.loaded[c]=true;scheduleRender();
+  },err=>{clearTimeout(t);S.err[c]=err.code;S.loaded[c]=true;scheduleRender()});
+}
+setTimeout(()=>loadData(false),0);
+
+/* ---------- derived ---------- */
+const games=(t=S.team)=>S.data[t]?S.data[t].games:[];
+function seriesList(t=S.team){const m=new Map();games(t).forEach(g=>{const k=g.week+'|'+g.opponent;if(!m.has(k))m.set(k,{team:t,week:g.week,start:g.start,end:g.end,opponent:g.opponent,home:g.home,conference:g.conference,games:[]});m.get(k).games.push(g)});return [...m.values()]}
+function record(t=S.team){let w=0,l=0,ti=0,rf=0,ra=0;games(t).forEach(g=>{if(!g.result)return;if(g.result==='W')w++;else if(g.result==='L')l++;else ti++;rf+=g.us;ra+=g.them});return{w,l,t:ti,rf,ra}}
+const usRow=(t=S.team)=>{const d=S.data[t];return d?d.standings.find(s=>s.team===d.usName):null};
+const openDeadlines=()=>S.deadlines.filter(d=>!d.done);
+const urgent=()=>openDeadlines().filter(d=>d.due&&daysUntil(d.due)<=7).sort((a,b)=>(a.due+(a.time||'')).localeCompare(b.due+(b.time||'')));
+const taskPct=t=>t.status==='done'?100:Math.max(0,Math.min(100,Number(t.progress)||0));
+const rosterOf=t=>(S.data[t]?.roster||[]).map(p=>({...p,team:t,key:slug(p.name)}));
+function allPeople(){const m=new Map();TEAMS.forEach(t=>rosterOf(t).forEach(p=>{const ex=m.get(p.key);if(ex){if(!ex.teams.includes(t))ex.teams.push(t)}else m.set(p.key,{key:p.key,name:p.name,teams:[t]})}));return m}
+const people=()=>{const s=new Set();S.board.forEach(b=>{b.name&&s.add(b.name);b.role&&s.add(b.role)});TEAMS.forEach(t=>rosterOf(t).forEach(p=>s.add(first(p.name))));return [...s]};
+const duesCfg=()=>S.settings.find(s=>s.id==='dues')||{};
+const plabel=k=>S.players.find(p=>p.id===k)||{};
+function officerMap(){const m=new Map();S.players.filter(p=>p.officer).forEach(p=>m.set(p.id,{key:p.id,role:p.role||'',name:p.name||''}));S.board.filter(b=>b.playerKey).forEach(b=>{const e=m.get(b.playerKey);m.set(b.playerKey,{key:b.playerKey,role:(e&&e.role)||b.role||'',name:(e&&e.name)||b.name,boardId:b.id})});return m}
+
+/* ---------- shell ---------- */
+function renderNav(){
+  const counts={deadlines:openDeadlines().length,tasks:S.tasks.filter(t=>t.status!=='done').length,responses:S.forms.length,carpools:S.carpools.filter(c=>!c.date||c.date>=todayS()).length};
+  const urgentN=urgent().length;
+  const btn=([k,l,i])=>{let ct='';if(k==='deadlines'&&counts.deadlines)ct=`<span class="ct ${urgentN?'':'soft'}">${counts.deadlines}</span>`;else if(counts[k])ct=`<span class="ct soft">${counts[k]}</span>`;
+    return `<button class="nav ${S.view===k?'on':''}" data-nav="${k}" type="button" ${S.view===k?'aria-current="page"':''}>${ic(i)}${l}${ct}</button>`};
+  $('#nav1').innerHTML=VIEWS.filter(v=>v[3]===1&&allowed(v[0])).map(btn).join('');
+  $('#nav2').innerHTML=VIEWS.filter(v=>v[3]===2&&allowed(v[0])).map(btn).join('');
+  $('#nav2').previousElementSibling.textContent=isBoard()?'Club board':'Club';
+  $('#bell').parentElement.hidden=!isBoard();
+  const d=S.data.D1||S.data.D2;
+  $('#sync').innerHTML=d?`<div><span class="dot"></span><b>NCBA data · D1 &amp; D2</b></div><div>${esc(d.season)} season · synced ${new Date(d.syncedAt).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}</div><div>Ask Claude to refresh it anytime.</div>`:`<div><span class="dot off"></span>Loading NCBA data…</div>`;
+  const u=isBoard()?urgent():[];const b=$('#bellct');b.hidden=!u.length;b.textContent=u.length;
+  $('#merole').textContent=S.mode==='board'?(canEdit()?`Board · ${S.user?.email||'can edit'}`:S.user?'Board · view only':'Board · not signed in'):'Member · view only';
+  $('#teamseg').innerHTML=TEAMS.map(t=>`<button type="button" class="${S.team===t?'on':''}" data-team="${t}" aria-pressed="${S.team===t}">${t}</button>`).join('');
+  const bn=[];
+  if(S.mode==='board'){
+    if(S.capsDone&&!S.db)bn.push('The club database isn’t connected yet, so board data and editing are unavailable.');
+    else if(S.capsDone&&!S.user)bn.push({h:'Sign in with your board Google account to see board data and make changes. <button class="btn sm pri" type="button" data-act="sign-in">Sign in with Google</button>'});
+    else if(S.user&&S.canWrite===false)bn.push({h:`${esc(S.user.email)} isn’t on the board editors list, so this is view-only. Ask the site owner to add it, or <button class="btn sm" type="button" data-act="sign-out">use another account</button>. Site owner? <button class="btn sm" type="button" data-act="manage-editors">Set up board editors</button>`});
+  }
+  if(COLS.some(c=>S.stale[c]))bn.push('Club data can’t be reached right now. What you see may be out of date; it will update on its own when the connection returns.');
+  $('#banners').innerHTML=bn.map(t=>`<div class="banner">${typeof t==='string'?esc(t):t.h}</div>`).join('');
+}
+function renderAll(){
+  if($('#app').hidden)return;
+  if(!allowed(S.view))S.view='overview';
+  renderNav();
+  if(S.view==='responses')autoSync();
+  const act=document.activeElement;const aid=act&&act.id&&$('#view').contains(act)?act.id:null;const sel=aid&&act.selectionStart;
+  const fn={overview:vOverview,calendar:vCalendar,deadlines:vDeadlines,tasks:vTasks,schedule:vSchedule,stats:vStats,roster:vRoster,responses:vResponses,matchups:vMatchups,national:vNational,dues:vDues,officerdues:vOfficerDues,refresh:vRefresh,attendance:vAttendance,carpools:vCarpools}[S.view]||vOverview;
+  let html;try{html=fn()}catch(e){console.error(e);html=`<div class="empty">This section couldn’t load. Try another tab, or reload the page.</div>`}
+  $('#view').innerHTML=html;
+  if(aid){const el=document.getElementById(aid);if(el){el.focus();try{if(sel!=null)el.setSelectionRange(sel,sel)}catch(e){}}}
+  if(!$('#bellpop').hidden)renderBell();
+}
+function go(v){if(!VIEWS.some(x=>x[0]===v)||!allowed(v))v='overview';S.view=v;if(location.hash!=='#'+v)history.replaceState(null,'','#'+v);renderAll();window.scrollTo({top:0})}
+addEventListener('hashchange',()=>{const v=location.hash.slice(1);if(v&&v!==S.view)go(v)});
+
+/* ---------- shared bits ---------- */
+const priPill=p=>{const v=PRI.includes(p)?p:'Medium';return `<span class="pill p-${v.toLowerCase()}">${v}</span>`};
+const chk=(on,attrs)=>canEdit()?`<button type="button" class="chk ${on?'on':''}" ${attrs} aria-pressed="${on?'true':'false'}">${on?ic('check'):''}</button>`:`<span class="chk ${on?'on':''}" aria-label="${on?'Done':'Open'}">${on?ic('check'):''}</span>`;
+const loadingOr=(c,html,emptyMsg)=>!S.capsDone||(S.db&&!S.loaded[c])?`<div class="empty">Loading…</div>`:(S[c].length||!emptyMsg?html:`<div class="empty">${emptyMsg}</div>`);
+const roNote=()=>S.mode==='member'?`<span class="ro-note">${ic('eye','width="14" height="14"')}View only</span>`:'';
+function spark(vals,w=110,h=42){if(!vals.length)return'';const mn=Math.min(0,...vals),mx=Math.max(0,...vals),rg=mx-mn||1;
+  const pts=vals.map((v,i)=>[vals.length===1?w/2:i*(w-6)/(vals.length-1)+3,h-4-(v-mn)/rg*(h-10)]);
+  const line=pts.map(p=>p.join(',')).join(' ');const z=h-4-(0-mn)/rg*(h-10);const last=pts[pts.length-1];
+  return `<svg class="spark" viewBox="0 0 ${w} ${h}" aria-hidden="true"><defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2b9257" stop-opacity=".28"/><stop offset="1" stop-color="#2b9257" stop-opacity="0"/></linearGradient></defs><line x1="0" x2="${w}" y1="${z}" y2="${z}" stroke="rgba(90,40,25,.15)" stroke-dasharray="3 3"/><polygon points="${pts[0][0]},${z} ${line} ${last[0]},${z}" fill="url(#sg)"/><polyline points="${line}" fill="none" stroke="#2b9257" stroke-width="2" stroke-linejoin="round"/><circle cx="${last[0]}" cy="${last[1]}" r="3.5" fill="#2b9257" stroke="#fff" stroke-width="1.5"/></svg>`}
+function standingsTable(compact){const d=T();const s=d?.standings||[];return `<div class="tw"><table class="t std num"><thead><tr><th>Team</th><th>Conf</th>${compact?'':'<th>Conf %</th>'}<th>Overall</th>${compact?'':'<th>Home</th><th>Away</th><th>RF</th><th>RA</th>'}<th>Strk</th></tr></thead><tbody>${s.map(r=>`<tr class="${r.team===d.usName?'us':''}"><td>${esc(r.team)}</td><td>${esc(r.confW)}-${esc(r.confL)}</td>${compact?'':`<td>${esc(r.confPct)}</td>`}<td>${esc(r.W)}-${esc(r.L)}</td>${compact?'':`<td>${esc(r.home)}</td><td>${esc(r.away)}</td><td>${esc(r.rf)}</td><td>${esc(r.ra)}</td>`}<td>${esc(r.streak)}</td></tr>`).join('')}</tbody></table></div>`}
+const ord=n=>{const s=['th','st','nd','rd'],v=n%100;return n+(s[(v-20)%10]||s[v]||s[0])};
+
+function upcomingItems(n=7){
+  const t=todayS();const items=[];
+  if(isBoard())S.events.filter(e=>e.date>=t).forEach(e=>items.push({d:e.date,tm:e.start||'',time:e.start?fmtT(e.start):'All day',title:e.title,team:e.team,sub:[e.type,e.location].filter(Boolean).join(' · '),color:evColor(e.type)}));
+  if(isBoard())openDeadlines().filter(d=>d.due>=t).forEach(d=>items.push({d:d.due,tm:d.time||'99',time:d.time?fmtT(d.time):'Due',title:'Deadline: '+d.title,sub:d.owner||'',color:'#d23a2e'}));
+  TEAMS.forEach(tm=>seriesList(tm).filter(s=>s.end>=t&&!s.games.some(g=>g.result)).forEach(s=>items.push({d:s.start,tm:'00',time:'Week',team:tm,title:`Series ${s.home?'vs':'at'} ${s.opponent}`,sub:`${s.week} · ${fmtD(s.start)}–${fmtD(s.end)} · ${s.games.length} games`,color:'#7a1f1a'})));
+  S.carpools.filter(c=>c.date&&c.date>=t).forEach(c=>items.push({d:c.date,tm:c.depart||'00',time:c.depart?fmtT(c.depart):'Trip',team:c.team,title:'Carpool: '+(c.title||'Trip'),sub:c.meet?'Meet at '+c.meet:'',color:'#3a74c9'}));
+  return items.sort((a,b)=>(a.d+a.tm).localeCompare(b.d+b.tm)).slice(0,n);
+}
+
+/* ---------- overview ---------- */
+function vOverview(){
+  const d=T();const r=record();const st=d?.standings||[];const us=usRow();const rank=us?st.indexOf(us)+1:null;
+  let cum=0;const rd=games().filter(g=>g.result).map(g=>cum+=g.us-g.them);
+  const ht=d?.hitting.total,pt=d?.pitching.total,hc=d?.hitting.cols||[],pc=d?.pitching.cols||[];
+  const hv=k=>ht?ht[hc.indexOf(k)]:'–',pv=k=>pt?pt[pc.indexOf(k)]:'–';
+  const trim=v=>String(v).replace(/^0\./,'.');
+  const u=urgent();const next=seriesList().find(s=>!s.games.some(g=>g.result));
+  const dls=openDeadlines().sort((a,b)=>(a.due||'9').localeCompare(b.due||'9')).slice(0,6);
+  const tasks=S.tasks;const avg=tasks.length?Math.round(tasks.reduce((s,t)=>s+taskPct(t),0)/tasks.length):0;
+  const tl=upcomingItems(8);let lastD='';
+  const anns=[...S.announcements].sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).slice(0,4);
+  const dsum=duesSummary();const lastSess=[...S.attendance].filter(a=>a.team===S.team).sort((a,b)=>(b.date||'').localeCompare(a.date||''))[0];
+  const attPct=lastSess?sessPct(lastSess):null;
+  return `
+  <div class="hero">
+    <div class="card hello"><div style="display:flex;gap:10px;align-items:center"><div class="av">B</div><span class="pill p-neutral">${esc(fmtD(todayS(),{weekday:'long',month:'long',day:'numeric'}))}</span>${tchip(S.team)}</div>
+      <div><h2>Hey Badger</h2><div class="sub" style="margin-top:4px">${isBoard()?(u.length?`${u.length} deadline${u.length>1?'s':''} due within a week`:'No deadlines due this week'):'Welcome to Badger Club Baseball'}${next?` · Next ${S.team} series ${next.home?'vs':'at'} ${esc(next.opponent)}, week of ${fmtD(next.start)}`:''}</div></div></div>
+    <div class="card kpi"><span class="lab">${S.team} overall record</span><div class="row"><div><div class="big num">${r.w}-${r.l}</div><div class="sub">${us?`${esc(us.confW)}-${esc(us.confL)} conf · ${ord(rank)} in ${esc(d.conference.replace(' - ',' '))}`:''}</div></div>${spark(rd)}</div><span class="delta ${cum>=0?'up':'down'}">${cum>=0?'+':''}${cum} run differential</span></div>
+    <div class="card kpi"><span class="lab">${S.team} hitting</span><div class="big num">${esc(trim(hv('AVG')))}</div><div class="sub">AVG · ${esc(trim(hv('OBP')))} OBP · ${esc(trim(hv('OPS')))} OPS</div><span class="delta up">${esc(hv('R'))} runs · ${esc(hv('SB'))} steals</span></div>
+    <div class="card kpi"><span class="lab">${S.team} pitching</span><div class="big num">${esc(pv('ERA'))}</div><div class="sub">ERA · ${esc(pv('WHIP'))} WHIP · ${esc(pv('SO'))} K</div><span class="delta up">${esc(pv('K/BB'))} K/BB · ${esc(pv('HR'))} HR allowed</span></div>
+  </div>
+  <div class="ovgrid">
+    <div class="col">
+      ${isBoard()?`<div class="card"><div class="ch"><h3>Upcoming deadlines</h3>${E(`<button class="btn sm pri" data-act="add-deadline" type="button">${ic('plus')}Add</button>`)}<button class="link" data-nav="deadlines" type="button">All deadlines ${ic('right')}</button></div>
+        ${loadingOr('deadlines',dls.length?`<div class="tw"><table class="t"><thead><tr><th></th><th>Deadline</th><th>Owner</th><th>Due</th><th>Priority</th></tr></thead><tbody>${dls.map(x=>{const n=x.due?daysUntil(x.due):null;return `<tr><td style="width:28px">${chk(false,`data-act="toggle-dl" data-id="${esc(x.id)}" aria-label="Mark ${esc(x.title)} done"`)}</td><td class="ttl">${esc(x.title)}</td><td class="sub">${esc(x.owner||'–')}</td><td class="num" style="white-space:nowrap">${x.due?`${fmtD(x.due)}${x.time?' · '+fmtT(x.time):''}<div class="sub" style="color:${n<0?'var(--bad)':n<=3?'var(--warn)':'var(--muted)'}">${rel(n)}</div>`:'–'}</td><td>${priPill(x.priority)}</td></tr>`}).join('')}</tbody></table></div>`:'','No open deadlines. Add one with the Add button.')}
+      </div>`:''}
+      <div class="card"><div class="ch"><h3>Announcements</h3>${E(`<button class="btn sm" data-act="add-ann" type="button">${ic('plus')}Post</button>`)}</div>
+        ${loadingOr('announcements',`<div class="ann">${anns.map(a=>`<div class="annitem"><div style="color:var(--red);flex:none">${ic('mega','width="18" height="18"')}</div><div style="min-width:0"><p>${esc(a.text)}</p><small>${a.createdAt?new Date(a.createdAt).toLocaleDateString('en-US',{month:'short',day:'numeric'}):''}</small></div>${E(`<button class="mini x" data-act="del-ann" data-id="${esc(a.id)}" aria-label="Delete announcement" type="button">${ic('trash')}</button>`)}</div>`).join('')}</div>`,'Nothing posted yet.')}
+      </div>
+      <div class="card"><div class="ch"><h3>${esc(d?d.conference.replace(' - ',' – '):'')} standings ${tchip(S.team)}</h3><button class="link" data-nav="schedule" type="button">Schedule ${ic('right')}</button></div>${d?standingsTable(true):'<div class="empty">Loading…</div>'}</div>
+    </div>
+    <div class="col">
+      <div class="card"><div class="ch"><h3>Coming up</h3>${isBoard()?`<button class="link" data-nav="calendar" type="button">Calendar ${ic('right')}</button>`:''}</div>
+        ${tl.length?`<div class="timeline">${tl.map(i=>{const h=i.d!==lastD?`<div class="tday">${esc(fmtD(i.d,{weekday:'short',month:'short',day:'numeric'}))}</div>`:'';lastD=i.d;return h+`<div class="titem"><span class="tm">${esc(i.time)}</span><span class="bar" style="background:${i.color}"></span><div><b>${tchip(i.team)} ${esc(i.title)}</b><small>${esc(i.sub)}</small></div></div>`}).join('')}</div>`:'<div class="empty">Nothing scheduled yet.</div>'}
+      </div>
+      <div class="card"><div class="ch"><h3>Club pulse</h3></div>
+        <div class="plist">
+          ${isBoard()?`<div class="prow"><div class="top2"><b>Dues collected</b><span>${money(dsum.paid)} of ${money(dsum.owed)}</span></div><div class="prog good"><i style="width:${dsum.owed?Math.min(100,dsum.paid/dsum.owed*100).toFixed(0):0}%"></i></div></div>`:''}
+          <div class="prow"><div class="top2"><b>Last ${S.team} practice attendance</b><span>${attPct==null?'No sessions yet':attPct+'%'}</span></div><div class="prog"><i style="width:${attPct||0}%"></i></div></div>
+          ${isBoard()?`<div class="prow"><div class="top2"><b>All club tasks</b><span>${avg}%</span></div><div class="prog good"><i style="width:${avg}%"></i></div></div>`:''}
+          ${!isBoard()?'':tasks.filter(t=>t.status!=='done').sort((a,b)=>(a.due||'9').localeCompare(b.due||'9')).slice(0,3).map(t=>`<div class="prow"><div class="top2"><span style="color:var(--ink)">${esc(t.title)}</span><span>${taskPct(t)}%</span></div><div class="prog"><i style="width:${taskPct(t)}%"></i></div></div>`).join('')}
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ---------- calendar ---------- */
+function vCalendar(){
+  const {y,m,sel}=S.cal;const f=new Date(y,m,1);const startOff=(f.getDay()+6)%7;const start=new Date(y,m,1-startOff);
+  const last=new Date(y,m+1,0);const weeks=Math.ceil((startOff+last.getDate())/7);const t=todayS();
+  const ser=[...seriesList('D1'),...seriesList('D2')];
+  const dayItems=ds=>{const ev=S.events.filter(e=>e.date===ds).sort((a,b)=>(a.start||'').localeCompare(b.start||'')).map(e=>({kind:'ev',d:e,color:evColor(e.type),label:(e.team&&e.team!=='Club'?e.team+' ':'')+(e.start?fmtT(e.start).replace(':00','')+' ':'')+e.title}));
+    const dl=S.deadlines.filter(d=>d.due===ds).map(d=>({kind:'dl',d,color:'#d23a2e',label:'Due: '+d.title}));
+    const cp=S.carpools.filter(c=>c.date===ds).map(c=>({kind:'cp',d:c,color:'#3a74c9',label:'Carpool: '+(c.title||'Trip')}));return ev.concat(dl,cp)};
+  let html='';
+  for(let w=0;w<weeks;w++){
+    const ws=new Date(start);ws.setDate(start.getDate()+w*7);const we=new Date(ws);we.setDate(ws.getDate()+6);
+    const wsS=ymd(ws),weS=ymd(we);const sr=ser.filter(s=>s.start<=weS&&s.end>=wsS);
+    html+=`<div class="week">${sr.map(s=>`<div class="series">${tchip(s.team)} ${esc(s.week)}: Series ${s.home?'vs':'at'} ${esc(s.opponent)} <span>${s.games.length} games${s.games.some(g=>g.result)?' · '+s.games.map(g=>g.result).join('-'):' · days and times TBA on NCBA'}</span></div>`).join('')}<div class="days">`;
+    for(let d=0;d<7;d++){const dt=new Date(ws);dt.setDate(ws.getDate()+d);const ds=ymd(dt);const it=dayItems(ds);
+      html+=`<button type="button" class="day ${dt.getMonth()!==m?'out':''} ${ds===t?'today':''} ${ds===sel?'sel':''}" data-day="${ds}" aria-label="${esc(fmtD(ds,{weekday:'long',month:'long',day:'numeric'}))}, ${it.length} item${it.length===1?'':'s'}"><span class="dn">${dt.getDate()}</span>${it.slice(0,3).map(i=>`<span class="ev" style="border-color:${i.color};background:${i.color}1a;color:${i.color}">${esc(i.label)}</span>`).join('')}${it.length>3?`<span class="more">+${it.length-3} more</span>`:''}</button>`}
+    html+='</div></div>';
+  }
+  const selItems=dayItems(sel);const selSer=ser.filter(s=>s.start<=sel&&s.end>=sel);
+  return `<div class="pagehead"><div><h2>Club calendar</h2><p>Practices, meetings and events for D1, D2 and the whole club. NCBA series weeks for both teams show automatically.</p></div><div class="spacer"></div>${roNote()}${E(`<button class="btn pri" data-act="add-event" data-date="${sel}" type="button">${ic('plus')}Add event</button>`)}</div>
+  <div class="calwrap">
+    <div class="card"><div class="calhead"><button class="mini" data-act="cal-prev" aria-label="Previous month" type="button">${ic('left')}</button><h3>${f.toLocaleDateString('en-US',{month:'long',year:'numeric'})}</h3><button class="mini" data-act="cal-next" aria-label="Next month" type="button">${ic('right')}</button><button class="btn sm" data-act="cal-today" type="button">Today</button></div>
+      <div class="dow">${['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d=>`<span>${d}</span>`).join('')}</div>${html}
+      <div class="legend">${Object.entries(EVTYPES).map(([k,c])=>`<span><i style="background:${c}"></i>${k}</span>`).join('')}<span><i style="background:#d23a2e"></i>Deadline</span><span><i style="background:#3a74c9"></i>Carpool</span></div></div>
+    <div class="card"><div class="ch"><h3>${esc(fmtD(sel,{weekday:'long',month:'long',day:'numeric'}))}</h3></div>
+      <div class="dlist">${selSer.map(s=>`<div class="ditem" style="border-left-color:#7a1f1a"><div><b>${tchip(s.team)} Series ${s.home?'vs':'at'} ${esc(s.opponent)}</b><small>${esc(s.week)} · ${fmtD(s.start)}–${fmtD(s.end)} · ${s.home?'Home':'Away'} · exact days TBA on NCBA</small></div></div>`).join('')}
+      ${selItems.map(i=>i.kind==='ev'?`<div class="ditem" style="border-left-color:${i.color}"><div style="min-width:0"><b>${tchip(i.d.team)} ${esc(i.d.title)}</b><small>${i.d.start?fmtT(i.d.start)+(i.d.end?' – '+fmtT(i.d.end):''):'All day'} · ${esc(own(EVTYPES,i.d.type)?i.d.type:'Other')}${i.d.location?' · '+esc(i.d.location):''}</small>${i.d.notes?`<small>${esc(i.d.notes)}</small>`:''}</div>${E(`<div class="acts"><button class="mini" data-act="edit-event" data-id="${esc(i.d.id)}" aria-label="Edit event" type="button">${ic('edit')}</button><button class="mini" data-act="del-event" data-id="${esc(i.d.id)}" aria-label="Delete event" type="button">${ic('trash')}</button></div>`)}</div>`
+        :i.kind==='dl'?`<div class="ditem" style="border-left-color:#d23a2e"><div><b>Due: ${esc(i.d.title)}</b><small>${esc(i.d.owner||'')}${i.d.time?' · '+fmtT(i.d.time):''}${i.d.done?' · Done':''}</small></div></div>`
+        :`<div class="ditem" style="border-left-color:#3a74c9"><div><b>${tchip(i.d.team)} Carpool: ${esc(i.d.title||'Trip')}</b><small>${i.d.depart?fmtT(i.d.depart)+' · ':''}${esc(i.d.meet||'')}</small></div></div>`).join('')}
+      ${!selItems.length&&!selSer.length?'<div class="empty">Nothing on this day.</div>':''}</div>
+      ${E(`<button class="btn" style="margin-top:12px;width:100%;justify-content:center" data-act="add-event" data-date="${sel}" type="button">${ic('plus')}Add event on ${esc(fmtD(sel))}</button>`)}
+    </div>
+  </div>`;
+}
+
+/* ---------- deadlines ---------- */
+function vDeadlines(){
+  const f=S.dlFilter;const t=todayS();
+  let list=[...S.deadlines];
+  if(f==='upcoming')list=list.filter(d=>!d.done&&(!d.due||d.due>=t));else if(f==='overdue')list=list.filter(d=>!d.done&&d.due&&d.due<t);else if(f==='done')list=list.filter(d=>d.done);
+  list.sort((a,b)=>f==='done'?(b.due||'').localeCompare(a.due||''):((a.due||'9')+(a.time||'')).localeCompare((b.due||'9')+(b.time||'')));
+  const od=S.deadlines.filter(d=>!d.done&&d.due&&d.due<t).length;
+  return `<div class="pagehead"><div><h2>Deadlines</h2><p>Board members add deliverables here. Anything due within a week shows on the overview and in the bell.</p></div><div class="spacer"></div>${roNote()}${E(`<button class="btn pri" data-act="add-deadline" type="button">${ic('plus')}Add deadline</button>`)}</div>
+  <div><div class="seg" role="tablist">${[['upcoming','Upcoming'],['overdue',`Overdue${od?` (${od})`:''}`],['done','Done'],['all','All']].map(([k,l])=>`<button type="button" role="tab" aria-selected="${f===k}" class="${f===k?'on':''}" data-dlf="${k}">${l}</button>`).join('')}</div></div>
+  ${loadingOr('deadlines',list.length?`<div class="dlcards">${list.map(d=>{const n=d.due?daysUntil(d.due):null;const cls=d.done?'isdone':n==null?'':n<0?'overdue':n<=3?'soon':'later';
+    return `<div class="dl ${cls}"><div class="when num">${d.due?pd(d.due).getDate():'–'}<small>${d.due?fmtD(d.due,{month:'short'}):'No date'}</small></div>
+      <div style="min-width:0"><b>${esc(d.title)}</b><div class="meta">${priPill(d.priority)}${d.owner?`<span>${esc(d.owner)}</span>`:''}${d.due?`<span style="color:${d.done?'var(--muted)':n<0?'var(--bad)':n<=3?'var(--warn)':'var(--muted)'};font-weight:600">${d.done?'Done':rel(n)}${d.time?' · '+fmtT(d.time):''}</span>`:''}</div>${d.notes?`<div class="notes">${esc(d.notes)}</div>`:''}</div>
+      <div class="acts">${chk(d.done,`data-act="toggle-dl" data-id="${esc(d.id)}" aria-label="${d.done?'Reopen':'Mark done'}: ${esc(d.title)}"`)}${E(`<button class="mini" data-act="edit-deadline" data-id="${esc(d.id)}" aria-label="Edit deadline" type="button">${ic('edit')}</button><button class="mini" data-act="del-deadline" data-id="${esc(d.id)}" aria-label="Delete deadline" type="button">${ic('trash')}</button>`)}</div></div>`}).join('')}</div>`:`<div class="empty">${f==='overdue'?'Nothing overdue.':f==='done'?'No completed deadlines yet.':'No deadlines here yet.'}</div>`,'No deadlines yet.')}`;
+}
+
+/* ---------- tasks ---------- */
+function vTasks(){
+  const lanes=[['todo','To do','#a8958e'],['doing','In progress','#d9821a'],['done','Done','#2b9257']];
+  const all=S.tasks;const avg=all.length?Math.round(all.reduce((s,t)=>s+taskPct(t),0)/all.length):0;const done=all.filter(t=>t.status==='done').length;
+  const card=t=>{const p=taskPct(t);const n=t.due?daysUntil(t.due):null;return `<div class="task"><b>${esc(t.title)}</b><div class="meta">${priPill(t.priority)}${t.assignee?`<span>${esc(t.assignee)}</span>`:''}${t.due?`<span style="${t.status!=='done'&&n<0?'color:var(--bad);font-weight:600':''}">Due ${fmtD(t.due)}</span>`:''}</div>
+    <div class="prog ${p===100?'good':''}"><i style="width:${p}%"></i></div>
+    ${E(`<input type="range" min="0" max="100" step="5" value="${p}" data-act="task-pct" data-id="${esc(t.id)}" aria-label="Progress for ${esc(t.title)}">`)}
+    <div class="foot"><span class="pc">${p}%</span>${E(`${t.status!=='todo'?`<button class="mini" data-act="task-move" data-dir="-1" data-id="${esc(t.id)}" aria-label="Move back" type="button">${ic('left')}</button>`:''}${t.status!=='done'?`<button class="mini" data-act="task-move" data-dir="1" data-id="${esc(t.id)}" aria-label="Move forward" type="button">${ic('right')}</button>`:''}<button class="mini" data-act="edit-task" data-id="${esc(t.id)}" aria-label="Edit task" type="button">${ic('edit')}</button><button class="mini" data-act="del-task" data-id="${esc(t.id)}" aria-label="Delete task" type="button">${ic('trash')}</button>`)}</div></div>`};
+  return `<div class="pagehead"><div><h2>Task tracker</h2><p>${S.mode==='board'?'Drag a task’s slider to log progress. Reaching 100% moves it to Done.':'Progress on club jobs, updated by the board.'}</p></div><div class="spacer"></div>${roNote()}${E(`<button class="btn pri" data-act="add-task" type="button">${ic('plus')}Add task</button>`)}</div>
+  <div class="card overall"><div><div class="sub">Overall completion</div><div class="big num">${avg}%</div></div><div class="prog good"><i style="width:${avg}%"></i></div><div class="sub">${done} of ${all.length} tasks done</div></div>
+  ${loadingOr('tasks',`<div class="kanban">${lanes.map(([k,l,c])=>{const ts=all.filter(t=>(t.status||'todo')===k).sort((a,b)=>(a.due||'9').localeCompare(b.due||'9'));return `<div class="lane"><div class="lanehead"><i style="background:${c}"></i>${l} <span>${ts.length}</span></div>${ts.map(card).join('')||'<div class="empty">Empty</div>'}</div>`}).join('')}</div>`,'No tasks yet.')}`;
+}
+
+/* ---------- schedule ---------- */
+function vSchedule(){
+  const d=T();if(!d)return `<div class="empty">${S.dataErr?'NCBA data could not load.':'Loading NCBA schedule…'}</div>`;
+  const r=record();const ser=seriesList();const n=ser.find(s=>!s.games.some(g=>g.result));
+  return `<div class="pagehead"><div><h2>${S.team} schedule &amp; results</h2><p>${esc(d.season)} · ${esc(d.conference)} · imported from ${esc(d.origin.replace('https://',''))}</p></div><div class="spacer"></div><a class="btn" href="${esc(d.teamUrl)}" target="_blank" rel="noopener">${ic('ext')}NCBA team page</a></div>
+  <div class="hero hero4">
+    <div class="card kpi"><span class="lab">Record</span><div class="big num">${r.w}-${r.l}</div></div>
+    <div class="card kpi"><span class="lab">Runs for / against</span><div class="big num">${r.rf}–${r.ra}</div></div>
+    <div class="card kpi"><span class="lab">Games played</span><div class="big num">${games().filter(g=>g.result).length} <span class="sub" style="font-family:var(--body);font-size:14px">of ${games().length}</span></div></div>
+    <div class="card kpi"><span class="lab">Next series</span>${n?`<div class="big" style="font-size:30px">${n.home?'vs':'at'} ${esc(n.opponent)}</div><div class="sub">Week of ${fmtD(n.start,{month:'short',day:'numeric',year:'numeric'})}</div>`:'<div class="sub">Season complete</div>'}</div>
+  </div>
+  <div class="serieslist">${ser.map(s=>{const pl=s.games.filter(g=>g.result);const w=pl.filter(g=>g.result==='W').length,l=pl.filter(g=>g.result==='L').length;
+    return `<div class="card sercard"><div class="wk">${esc(s.week)}<small>${fmtD(s.start)} – ${fmtD(s.end,{month:'short',day:'numeric',year:'numeric'})}</small></div>
+    <div style="min-width:0"><h4>${s.home?'vs':'at'} ${esc(s.opponent)}</h4><div class="meta" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px"><span class="pill ${s.home?'p-red':'p-neutral'}">${s.home?'Home':'Away'}</span><span class="pill p-neutral">${s.conference?'Conference':'Non-conference'}</span>${pl.length?'':'<span class="pill p-neutral">Days and times TBA</span>'}<button class="pill p-neutral" style="cursor:pointer" data-matchup="${esc(s.week+'|'+s.opponent)}" type="button">Matchup ${ic('right','width="11" height="11"')}</button></div>
+      <div class="games">${s.games.map((g,i)=>`<a class="game" href="${esc(g.url)}" target="_blank" rel="noopener" aria-label="Game ${i+1} details on NCBA">${g.result?`<span class="chip ${g.result.toLowerCase()}">${g.result}</span><span class="sc">${g.us}–${g.them}</span>`:`<span class="chip t">G${i+1}</span><span class="sub">Upcoming</span>`}${ic('ext','width="12" height="12" style="color:var(--dim)"')}</a>`).join('')}</div></div>
+    <div class="sres">${pl.length?`<b class="num" style="color:${w>l?'var(--good)':w<l?'var(--bad)':'var(--ink)'}">${w}-${l}</b><span class="sub">${w>l?'Won series':w<l?'Lost series':'Split'}</span>`:`<b style="color:var(--dim)">—</b><span class="sub">Upcoming</span>`}</div></div>`}).join('')}</div>
+  <div class="card"><div class="ch"><h3>${esc(d.conference.replace(' - ',' – '))} standings</h3></div>${standingsTable(false)}</div>`;
+}
+
+/* ---------- stats ---------- */
+const num=v=>parseFloat(v);
+const ipfmt=v=>{const x=num(v);const w=Math.floor(x+1e-9);const frac=Math.round((x-w)*100);return `${w}.${frac===10?1:frac===20?2:0}`};
+const trim3=v=>String(v).replace(/^0\./,'.');
+function vStats(){
+  const d=T();if(!d)return `<div class="empty">${S.dataErr?'NCBA data could not load.':'Loading stats…'}</div>`;
+  const tab=S.statTab;const src=d[tab];const cols=src.cols;const ix=k=>cols.indexOf(k);
+  const rows=src.rows.map(r=>r.slice());
+  let leaders,bars,barTitle,qf;
+  if(tab==='hitting'){
+    qf=r=>num(r[ix('AB')])>=10;const q=rows.filter(qf);const top=(k,arr=q)=>[...arr].sort((a,b)=>num(b[ix(k)])-num(a[ix(k)]))[0];
+    leaders=[['AVG',top('AVG'),'Batting average · min 10 AB',trim3,q],['OBP',top('OBP'),'On-base pct · min 10 AB',trim3,q],['RBI',top('RBI',rows),'Runs batted in',x=>x,rows],['SB',top('SB',rows),'Stolen bases',x=>x,rows]];
+    barTitle='OPS by hitter (min 10 AB)';bars=[...q].sort((a,b)=>num(b[ix('OPS')])-num(a[ix('OPS')])).map(r=>[r[0],num(r[ix('OPS')]),trim3(r[ix('OPS')])]);
+  }else{
+    qf=r=>num(r[ix('IP')])>=5;const q=rows.filter(qf);const top=(k,arr=q,asc)=>[...arr].sort((a,b)=>asc?num(a[ix(k)])-num(b[ix(k)]):num(b[ix(k)])-num(a[ix(k)]))[0];
+    leaders=[['ERA',top('ERA',q,true),'Earned run avg · min 5 IP',x=>x,q],['SO',top('SO',rows),'Strikeouts',x=>x,rows],['W',top('W',rows),'Wins',x=>x,rows],['WHIP',top('WHIP',q,true),'WHIP · min 5 IP',x=>x,q]];
+    barTitle='Strikeouts per 9 (min 5 IP)';bars=[...q].sort((a,b)=>num(b[ix('KPER9')])-num(a[ix('KPER9')])).map(r=>[r[0],num(r[ix('KPER9')]),r[ix('KPER9')]]);
+  }
+  const mx=Math.max(...bars.map(b=>b[1]),0.001);
+  const so=S.sort[tab];const k=so.k,ki=Math.max(0,ix(k));
+  rows.sort((a,b)=>ki===0?String(a[0]).localeCompare(b[0])*so.d:(num(a[ki])-num(b[ki]))*so.d);
+  const cell=(c,v)=>c==='IP'?ipfmt(v):(['AVG','OBP','SLG','OPS'].includes(c)?trim3(v):v);
+  return `<div class="pagehead"><div><h2>${S.team} team stats</h2><div class="srcline" style="margin-top:6px"><span class="pill p-neutral">Source: NCBA</span><a href="${esc(d.teamUrl)}" target="_blank" rel="noopener">${esc(d.origin.replace('https://',''))}</a><span>· ${esc(d.season)} · synced ${new Date(d.syncedAt).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</span></div></div><div class="spacer"></div><div class="seg" role="tablist">${[['hitting','Hitting'],['pitching','Pitching']].map(([kk,l])=>`<button type="button" role="tab" aria-selected="${tab===kk}" class="${tab===kk?'on':''}" data-stab="${kk}">${l}</button>`).join('')}</div></div>
+  <div class="leaders">${leaders.map(([kk,r,lab,f,pool])=>{const tie=r?pool.filter(x=>x!==r&&x[ix(kk)]===r[ix(kk)]).length:0;return `<div class="card leader"><div class="sub" style="font-weight:700;font-size:11px;letter-spacing:.07em;text-transform:uppercase">${esc(kk)} leader</div><div class="v num">${r?esc(f(r[ix(kk)])):'–'}</div><div class="n">${r?esc(first(r[0])):''}${tie?` <span class="sub">+${tie} tied</span>`:''}</div><small>${esc(lab)}</small></div>`}).join('')}</div>
+  <div class="ovgrid">
+    <div class="card"><div class="ch"><h3>${tab==='hitting'?'Hitting':'Pitching'} · all players</h3><span class="sub">Click a column to sort</span></div>
+      <div class="tw"><table class="t stattable num"><thead><tr>${cols.map(c=>`<th><button type="button" data-sort="${esc(c)}" class="${c===k?'on':''}">${esc(c==='KPER9'?'K/9':c==='WPER9'?'BB/9':c==='HPER9'?'H/9':c)}${c===k?(so.d<0?' ↓':' ↑'):''}</button></th>`).join('')}</tr></thead>
+      <tbody>${rows.map(r=>`<tr>${r.map((v,i)=>`<td>${i===0?esc(first(v)):esc(cell(cols[i],v))}</td>`).join('')}</tr>`).join('')}<tr class="tot">${src.total.map((v,i)=>`<td>${i===0?'Team total':esc(cell(cols[i],v))}</td>`).join('')}</tr></tbody></table></div></div>
+    <div class="col">
+      <div class="card"><div class="ch"><h3>${esc(barTitle)}</h3></div><div class="bars">${bars.map(b=>`<div class="brow"><span class="nm">${esc(first(b[0]))}</span><span class="bt"><i style="width:${(b[1]/mx*100).toFixed(1)}%"></i></span><span class="bv">${esc(b[2])}</span></div>`).join('')||'<div class="empty">No qualified players yet.</div>'}</div></div>
+      <div class="card gc"><div class="ic">${ic('link')}</div><div style="flex:1;min-width:180px"><b>GameChanger</b><div class="sub">Not connected yet. Send Claude your GameChanger team link and those stats will show here next to the NCBA numbers.</div></div></div>
+    </div>
+  </div>`;
+}
+
+/* ---------- comparison helpers ---------- */
+const STATS={
+ AVG:{l:'Batting avg',f:v=>trim3(v.toFixed(3)),hi:true,g:'h'},OBP:{l:'On-base pct',f:v=>trim3(v.toFixed(3)),hi:true,g:'h'},SLG:{l:'Slugging pct',f:v=>trim3(v.toFixed(3)),hi:true,g:'h'},
+ OPS:{l:'OPS',f:v=>trim3(v.toFixed(3)),hi:true,g:'h'},ISO:{l:'Isolated power',d:'SLG minus AVG',f:v=>trim3(v.toFixed(3)),hi:true,g:'h'},
+ KPCT:{l:'Strikeout rate',d:'K per plate appearance',f:v=>(v*100).toFixed(1)+'%',hi:false,g:'h'},BBPCT:{l:'Walk rate',d:'BB per plate appearance',f:v=>(v*100).toFixed(1)+'%',hi:true,g:'h'},
+ SBPCT:{l:'Steal success',d:'SB / (SB + CS)',f:v=>(v*100).toFixed(0)+'%',hi:true,g:'h'},
+ ERA:{l:'ERA',f:v=>v.toFixed(2),hi:false,g:'p'},WHIP:{l:'WHIP',d:'Walks + hits per inning',f:v=>v.toFixed(2),hi:false,g:'p'},K9:{l:'Strikeouts per 9',f:v=>v.toFixed(1),hi:true,g:'p'},
+ BB9:{l:'Walks per 9',f:v=>v.toFixed(1),hi:false,g:'p'},H9:{l:'Hits per 9',f:v=>v.toFixed(1),hi:false,g:'p'},RA9:{l:'Runs allowed per 9',f:v=>v.toFixed(2),hi:false,g:'p'},KBB:{l:'K / BB ratio',f:v=>v.toFixed(2),hi:true,g:'p'}
+};
+const better=(k,a,b)=>{if(a==null||b==null)return 0;const s=STATS[k];const rel=Math.abs(a-b)/Math.max(Math.abs(b),1e-9);if(rel<0.02)return 0;return (s.hi?a>b:a<b)?1:-1};
+
+/* ---------- matchups ---------- */
+function vMatchups(){
+  const d=T();if(!d)return `<div class="empty">Loading…</div>`;
+  const ser=seriesList();if(!ser.length)return `<div class="empty">No series on the ${S.team} schedule yet.</div>`;
+  let selKey=S.mSel[S.team];let s=ser.find(x=>x.week+'|'+x.opponent===selKey);
+  if(!s){s=ser.find(x=>!x.games.some(g=>g.result))||ser[ser.length-1];}
+  const opp=s.opponent;const od=own(d.opp,opp)?d.opp[opp]:null;const oR=od&&od.rates;const us=d.compare.us;const nat=d.compare.nat;
+  const oRow=d.standings.find(x=>x.team===opp);const oInfo=own(d.oppInfo,opp)?d.oppInfo[opp]:null;const usR=usRow();const rec=record();
+  const pl=s.games.filter(g=>g.result);const w=pl.filter(g=>g.result==='W').length,l=pl.filter(g=>g.result==='L').length;
+  const scout=S.scouting.find(x=>x.id===`${S.team}-${slug(opp)}`);
+  const row=(k)=>{const st=STATS[k];const a=us[k],b=oR?oR[k]:null,n=nat[k];const mx=Math.max(a||0,b||0,n||0)*1.15||1;
+    const e=better(k,a,b);
+    return `<div class="cmprow"><div class="lab"><b>${st.l}</b><small>Natl ${st.f(n)}</small></div>
+      <div class="half us" title="Badgers ${st.f(a)}"><i style="width:${(a/mx*100).toFixed(1)}%"></i><span class="nat" style="right:${(n/mx*100).toFixed(1)}%"></span></div>
+      <div class="vals"><span>${st.f(a)}</span><span>${b==null?'–':st.f(b)}</span></div>
+      <div class="half them" title="${esc(opp)} ${b==null?'no data':st.f(b)}">${b==null?'':`<i style="width:${(b/mx*100).toFixed(1)}%"></i>`}<span class="nat" style="left:${(n/mx*100).toFixed(1)}%"></span></div>
+      <div class="edge ${b==null?'even':e>0?'us':e<0?'them':'even'}">${b==null?'No data':e>0?'Badgers':e<0?esc(opp):'Even'}</div></div>`};
+  const hk=['AVG','OBP','SLG','OPS','KPCT','BBPCT'],pk=['ERA','WHIP','K9','BB9','H9'];
+  const edges=oR?[...hk,...pk].map(k=>better(k,us[k],oR[k])):[];const usE=edges.filter(x=>x>0).length,thE=edges.filter(x=>x<0).length;
+  const notes=[];
+  if(oR){
+    if(oR.BBPCT>nat.BBPCT*1.15)notes.push(['warn',`${opp} hitters walk in ${(oR.BBPCT*100).toFixed(1)}% of plate appearances (national ${(nat.BBPCT*100).toFixed(1)}%). Pound the zone and get ahead early.`]);
+    if(oR.KPCT>nat.KPCT*1.08)notes.push(['good',`Their lineup strikes out ${(oR.KPCT*100).toFixed(1)}% of the time (national ${(nat.KPCT*100).toFixed(1)}%). Expand with two strikes.`]);
+    else if(oR.KPCT<nat.KPCT*.88)notes.push(['warn',`Tough to strike out: ${(oR.KPCT*100).toFixed(1)}% K rate vs national ${(nat.KPCT*100).toFixed(1)}%. Expect a lot of balls in play, so defense matters.`]);
+    if(oR.OPS>nat.OPS*1.07)notes.push(['bad',`Dangerous offense: ${trim3(oR.OPS.toFixed(3))} OPS vs national ${trim3(nat.OPS.toFixed(3))}.`]);
+    if(oR.BB9>nat.BB9*1.12)notes.push(['good',`Their staff walks ${oR.BB9.toFixed(1)} per 9 (national ${nat.BB9.toFixed(1)}). Be patient and make them throw strikes.`]);
+    if(oR.K9>nat.K9*1.15)notes.push(['warn',`Their pitchers miss bats: ${oR.K9.toFixed(1)} K/9 (national ${nat.K9.toFixed(1)}). Shorten up and put the ball in play.`]);
+    if(oR.ERA<nat.ERA*.8)notes.push(['bad',`Strong pitching: ${oR.ERA.toFixed(2)} ERA vs national ${nat.ERA.toFixed(2)}.`]);
+    else if(oR.ERA>nat.ERA*1.15)notes.push(['good',`Their staff has a ${oR.ERA.toFixed(2)} ERA (national ${nat.ERA.toFixed(2)}). Runs should be there.`]);
+    if(us.ERA<oR.ERA&&us.OPS>oR.OPS)notes.push(['good',`On paper the Badgers are better on both sides: lower ERA and higher OPS.`]);
+  }
+  const plist=(arr,kind)=>arr&&arr.length?`<div class="plist2">${arr.map(p=>kind==='hit'?`<div class="pl2"><div><b>${esc(first(p[0]))}</b><small>${esc(p[1])} AB · ${esc(p[5])} HR · ${esc(p[6])} RBI · ${esc(p[7])} SB</small></div><div class="st">${trim3(p[2])} / ${trim3(p[3])}<small>${trim3(p[4])} OPS</small></div></div>`:`<div class="pl2"><div><b>${esc(first(p[0]))}</b><small>${ipfmt(p[1])} IP · ${esc(p[4])} K · ${esc(p[5])} BB</small></div><div class="st">${esc(p[2])} ERA<small>${esc(p[3])} WHIP</small></div></div>`).join('')}</div>`:'<div class="empty">No stats posted yet.</div>';
+  return `<div class="pagehead"><div><h2>${S.team} matchups</h2><p>Our season numbers against each series opponent, with the NCBA ${S.team} average marked on every bar.</p></div></div>
+  <div class="serchips">${ser.map(x=>{const k=x.week+'|'+x.opponent;const p=x.games.filter(g=>g.result);const ww=p.filter(g=>g.result==='W').length,ll=p.filter(g=>g.result==='L').length;return `<button type="button" class="serchip ${x===s?'on':''}" data-matchup="${esc(k)}">${x.home?'vs':'at'} ${esc(x.opponent)}<small>${esc(x.week)} · ${p.length?`${ww}-${ll}`:fmtD(x.start)}</small></button>`}).join('')}</div>
+  <div class="card vs">
+    <div class="side2"><span class="lab sub" style="font-weight:700;font-size:11px;letter-spacing:.07em;text-transform:uppercase">Badgers ${S.team}</span><div class="nm2">Wisconsin</div><div class="sub">${rec.w}-${rec.l} overall${usR?` · ${esc(usR.confW)}-${esc(usR.confL)} conf`:''}</div></div>
+    <div class="vsmark">VS</div>
+    <div class="side2 r"><span class="lab sub" style="font-weight:700;font-size:11px;letter-spacing:.07em;text-transform:uppercase">${s.home?'Visiting':'Home team'} · ${esc(s.week)}</span><div class="nm2">${esc(opp)}</div><div class="sub">${oRow?`${esc(oRow.W)}-${esc(oRow.L)} overall · ${esc(oRow.confW)}-${esc(oRow.confL)} conf · ${esc(oRow.streak)}`:oInfo?`${esc(oInfo.record)} overall · ${esc(oInfo.note)}`:'Record not listed'}</div></div>
+  </div>
+  <div class="ovgrid">
+    <div class="col">
+      <div class="card"><div class="ch"><h3>Head to head</h3><span class="sub">${fmtD(s.start)} – ${fmtD(s.end,{month:'short',day:'numeric',year:'numeric'})} · ${s.home?'Home':'Away'}</span></div>
+        ${pl.length?`<div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap"><div class="money num" style="color:${w>l?'var(--good)':w<l?'var(--bad)':'var(--ink)'}">${w}-${l}</div><div class="games">${s.games.map((g,i)=>`<a class="game" href="${esc(g.url)}" target="_blank" rel="noopener">${g.result?`<span class="chip ${g.result.toLowerCase()}">${g.result}</span><span class="sc">${g.us}–${g.them}</span>`:`<span class="chip t">G${i+1}</span>`}</a>`).join('')}</div></div>`:`<div class="sub">${s.games.length}-game series, not played yet. NCBA lists the week only; days and times are TBA.</div>`}
+      </div>
+      <div class="card"><div class="ch"><h3>Team comparison</h3>${oR?`<span class="sub">Badgers lead ${usE} of ${edges.length} categories · ${esc(opp)} lead ${thE}</span>`:''}</div>
+        ${oR?'':`<div class="banner" style="margin-bottom:12px">${esc(opp)} hasn’t posted ${esc(d.season)} stats on NCBA yet. Their side fills in once they do; ask Claude to refresh.</div>`}
+        <div class="cmphead"><span></span><span style="text-align:right">Badgers</span><span></span><span>${esc(opp)}</span><span style="text-align:right">Edge</span></div>
+        <div class="cmpgrid">${hk.map(row).join('')}</div>
+        <div class="cmphead" style="margin-top:14px"><span>Pitching</span><span></span><span></span><span></span><span></span></div>
+        <div class="cmpgrid">${pk.map(row).join('')}</div>
+        <p class="sub" style="margin:10px 0 0">Dark tick on each bar = NCBA ${S.team} average. Fall samples are small, so treat edges as a guide.</p>
+      </div>
+    </div>
+    <div class="col">
+      ${notes.length?`<div class="card"><div class="ch"><h3>Scouting read</h3></div><ul class="insights">${notes.map(([c,t])=>`<li class="${c}">${esc(t)}</li>`).join('')}</ul></div>`:''}
+      <div class="card"><div class="ch"><h3>Our scouting notes</h3>${E(`<button class="btn sm" data-act="edit-scout" data-opp="${esc(opp)}" type="button">${ic('edit')}${scout&&scout.notes?'Edit':'Add notes'}</button>`)}</div>
+        ${scout&&scout.notes?`<div class="howto" style="white-space:pre-wrap;overflow-wrap:anywhere">${esc(scout.notes)}</div>`:`<div class="empty">${S.mode==='board'?'Add what you know: their aces, tendencies, field notes.':'No notes yet.'}</div>`}</div>
+      <div class="card"><div class="ch"><h3>${esc(opp)} top hitters</h3></div>${plist(od&&od.leaders.hit,'hit')}</div>
+      <div class="card"><div class="ch"><h3>${esc(opp)} top arms</h3></div>${plist(od&&od.leaders.pit,'pit')}</div>
+      <div class="card"><div class="ch"><h3>Our top hitters</h3></div>${plist(d.usLeaders.hit,'hit')}</div>
+      <div class="card"><div class="ch"><h3>Our top arms</h3></div>${plist(d.usLeaders.pit,'pit')}</div>
+    </div>
+  </div>`;
+}
+
+/* ---------- national ---------- */
+function natTable(){const d=T();const n=d&&d.national;if(!n)return null;
+  const rows=n.teams.map(([name,conf,w,l,t,rf,ra])=>{const g=w+l+t;return {name,conf,w,l,t,g,rf,ra,pct:g?(w+t/2)/g:0,rfg:g?rf/g:0,rag:g?ra/g:0,rdg:g?(rf-ra)/g:0}});
+  rows.sort((a,b)=>b.pct-a.pct||b.rdg-a.rdg||b.w-a.w);return rows}
+function natStatRows(){const d=T();const n=d&&d.national;if(!n||!n.teamStats)return [];const ci=k=>n.statCols.indexOf(k);const conf={};(n.teams||[]).forEach(t=>conf[t[0]]=t[1]);
+  return n.teamStats.map(r=>{const g=k=>r[ci(k)]||0;const AB=g('AB'),H=g('H'),BB=g('BB'),HBP=g('HBP'),SF=g('SF'),TB=g('TB'),PA=g('PA'),O=g('OUTS');
+    const obp=AB+BB+HBP+SF?(H+BB+HBP)/(AB+BB+HBP+SF):null,slg=AB?TB/AB:null;
+    return {team:r[0],conf:conf[r[0]]||'',AB,R:g('R'),H,HR:g('HR'),RBI:g('RBI'),SB:g('SB'),BB,SO:g('SO'),AVG:AB?H/AB:null,OBP:obp,SLG:slg,OPS:obp!=null&&slg!=null?obp+slg:null,KPCT:PA?g('SO')/PA:null,BBPCT:PA?BB/PA:null,
+      IP:O/3,ERA:O?g('ER')*27/O:null,WHIP:O?(g('HA')+g('BBA'))*3/O:null,K9:O?g('K')*27/O:null,BB9:O?g('BBA')*27/O:null,K:g('K')}})}
+const NSC=[['team','Team'],['conf','Conference'],['AB','AB'],['R','R'],['H','H'],['HR','HR'],['RBI','RBI'],['SB','SB'],['AVG','AVG'],['OBP','OBP'],['SLG','SLG'],['OPS','OPS'],['KPCT','K%'],['BBPCT','BB%'],['IP','IP'],['ERA','ERA'],['WHIP','WHIP'],['K','K'],['K9','K/9'],['BB9','BB/9']];
+const NSC_LOW=new Set(['KPCT','ERA','WHIP','BB9']);
+function nsFmt(k,v){if(v==null)return '–';if(['AVG','OBP','SLG','OPS'].includes(k))return trim3(v.toFixed(3));if(k==='KPCT'||k==='BBPCT')return (v*100).toFixed(1)+'%';if(k==='IP'){const w=Math.floor(v+1e-9);return w+'.'+Math.round((v-w)*3)}if(['ERA','WHIP'].includes(k))return v.toFixed(2);if(k==='K9'||k==='BB9')return v.toFixed(1);return typeof v==='number'?v:esc(v)}
+function natStatsCard(){const d=T();const n=d.national||{};const rows=natStatRows();if(!rows.length)return '';const s=S.natSort||(S.natSort={k:'OPS',d:-1});
+  const sorted=[...rows].sort((a,b)=>{const x=a[s.k],y=b[s.k];if(x==null&&y==null)return 0;if(x==null)return 1;if(y==null)return -1;return (typeof x==='string'?x.localeCompare(y):x-y)*s.d});
+  const withStats=new Set(rows.map(r=>r.team));const noStats=[...(n.teams||[]).map(t=>[t[0],t[1]]).filter(t=>!withStats.has(t[0])),...Object.entries(n.unplayed||{}).flatMap(([c,ts])=>ts.map(t=>[t,c]))];
+  return `<div class="card"><div class="ch"><h3>Every ${S.team} team’s stats</h3><span class="sub">All ${rows.length} teams with posted stats, no minimum. Click a column to sort.</span></div>
+    <div class="tw" style="max-height:620px;overflow:auto"><table class="t stattable num"><thead><tr><th>#</th>${NSC.map(([k,l])=>`<th${k==='team'||k==='conf'?' style="text-align:left"':''}><button type="button" data-nsort="${k}" class="${s.k===k?'on':''}">${l}${s.k===k?(s.d<0?' ↓':' ↑'):''}</button></th>`).join('')}</tr></thead>
+    <tbody>${sorted.map((r,i)=>`<tr class="${r.team===d.usName?'me':''}" ${r.team===d.usName?'style="background:var(--red-soft)"':''}><td>${i+1}</td>${NSC.map(([k])=>`<td${k==='conf'?' class="sub" style="text-align:left"':k==='team'?' style="text-align:left;font-weight:600"':''}>${k==='team'?esc(r.team):k==='conf'?esc(r.conf):nsFmt(k,r[k])}</td>`).join('')}</tr>`).join('')}</tbody></table></div>
+    ${noStats.length?`<details style="margin-top:12px"><summary class="sub" style="cursor:pointer">${noStats.length} more ${S.team} teams haven’t posted any ${esc(d.season)} stats yet</summary><p class="sub" style="margin:8px 0 0;line-height:1.7">${noStats.sort((a,b)=>a[1].localeCompare(b[1])||a[0].localeCompare(b[0])).map(t=>`${esc(t[0])} <span style="color:var(--dim)">(${esc(t[1])})</span>`).join(' · ')}</p></details>`:''}</div>`}
+function natRank(rows,us,k,low){const v=us[k];return rows.filter(r=>low?r[k]<v-1e-9:r[k]>v+1e-9).length+1}
+function vNational(){
+  const d=T();if(!d)return `<div class="empty">Loading…</div>`;
+  const c=d.compare;const nat=d.national||{teams:[]};const rows=natTable()||[];const us=rows.find(r=>r.name===d.usName);
+  const sum=k=>rows.reduce((s,r)=>s+r[k],0),G=sum('g');const natAvg={pct:G?(sum('w')+sum('t')/2)/G:0,rfg:G?sum('rf')/G:0,rag:G?sum('ra')/G:0};
+  const recCards=us?[['Winning pct',us.pct.toFixed(3).replace(/^0/,''),natRank(rows,us,'pct'),natAvg.pct.toFixed(3).replace(/^0/,'')+' avg'],['Runs scored per game',us.rfg.toFixed(2),natRank(rows,us,'rfg'),natAvg.rfg.toFixed(2)+' avg'],['Runs allowed per game',us.rag.toFixed(2),natRank(rows,us,'rag',true),natAvg.rag.toFixed(2)+' avg'],['Run differential per game',(us.rdg>=0?'+':'')+us.rdg.toFixed(2),natRank(rows,us,'rdg'),'0.00 avg']]:[];
+  const keys=['AVG','OBP','SLG','OPS','ISO','KPCT','BBPCT','SBPCT','ERA','WHIP','K9','BB9','H9','RA9','KBB'];
+  const items=keys.map(k=>{const st=STATS[k];const a=c.us[k],n=c.nat[k];const [rk,of]=c.rank[k]||[null,0];const diff=a-n;const good=st.hi?diff>0:diff<0;const pct=rk&&of>1?(1-(rk-1)/(of-1))*100:50;return {k,st,a,n,rk,of,diff,good,pct}});
+  const strong=items.filter(i=>i.rk&&i.rk<=Math.ceil(i.of/3)).sort((a,b)=>a.rk/a.of-b.rk/b.of);
+  const weak=items.filter(i=>i.rk&&i.rk>Math.floor(i.of*2/3)).sort((a,b)=>b.rk/b.of-a.rk/a.of);
+  const div=S.team==='D1'?'Division 1':'Division 2';
+  const sentence=i=>`${i.st.l}: ${i.st.f(i.a)} ranks ${ord(i.rk)} of ${i.of} ${S.team} teams nationally (average ${i.st.f(i.n)}).`;
+  const dfmt=i=>{const v=i.diff;const s=v>0?'+':'−';const ab=Math.abs(v);return s+(['KPCT','BBPCT','SBPCT'].includes(i.k)?(ab*100).toFixed(1)+' pts':['AVG','OBP','SLG','OPS','ISO'].includes(i.k)?trim3(ab.toFixed(3)):ab.toFixed(2))};
+  const sec=(title,ks)=>`<div class="card"><div class="ch"><h3>${title}</h3><span class="sub">Ranked against all ${c.teamsH} ${S.team} teams with posted stats</span></div><div class="natrow h"><span>Stat</span><span>Badgers</span><span>National</span><span>Difference</span><span>Rank</span><span>Where we sit</span></div>
+    ${items.filter(i=>ks.includes(i.k)).map(i=>`<div class="natrow"><div class="lab"><b>${i.st.l}</b>${i.st.d?`<small>${i.st.d}</small>`:''}</div><b>${i.st.f(i.a)}</b><span class="sub num">${i.st.f(i.n)}</span><span class="diff ${Math.abs(i.diff)<1e-9?'':i.good?'good':'bad'}">${dfmt(i)}</span><span>${i.rk?`${ord(i.rk)} <span class="sub">of ${i.of}</span>`:'–'}</span><div class="pctl" title="${Math.round(i.pct)}th percentile"><span class="mid"></span><i style="left:${i.pct.toFixed(1)}%"></i></div></div>`).join('')}</div>`;
+  const unplayed=Object.entries(nat.unplayed||{}).flatMap(([c,ts])=>ts.map(t=>({name:t,conf:c})));
+  const shown=S.natAll?rows:rows.slice(0,25);const usIdx=rows.indexOf(us);
+  return `<div class="pagehead"><div><h2>${S.team} national rankings</h2><p>Every team in NCBA ${div}: ${nat.totalTeams} teams in ${nat.conferences} conferences across every region. ${rows.length} have played ${esc(d.season)} games so far, and ${c.teamsH} have posted box-score stats on NCBA. Record ranks use every team that has played; stat ranks use every team with posted stats. No minimums, no regional limits.</p></div><div class="spacer"></div><a class="btn" href="${esc(nat.standingsUrl||d.origin+'/league/standings/')}" target="_blank" rel="noopener">${ic('ext')}All NCBA standings</a></div>
+  ${us?`<div class="hero hero4">${recCards.map(([l,v,rk,avg])=>`<div class="card kpi"><span class="lab">${l}</span><div class="big num">${v}</div><div class="sub"><b style="color:var(--ink)">${ord(rk)} of ${rows.length}</b> nationally · ${avg}</div></div>`).join('')}</div>`:''}
+  <div class="ovgrid">
+    <div class="col">
+      <div class="card"><div class="ch"><h3>National standings · all ${S.team} conferences</h3><span class="sub">Sorted by winning pct, then run differential</span><button class="btn sm" style="margin-left:auto" data-act="nat-toggle" type="button">${S.natAll?'Show top 25':`Show all ${nat.totalTeams||rows.length} teams`}</button></div>
+        <div class="tw" style="max-height:${S.natAll?'none':'unset'}"><table class="t std num"><thead><tr><th>#</th><th>Team</th><th>Conference</th><th>W-L</th><th>Pct</th><th>RS/G</th><th>RA/G</th><th>Diff/G</th></tr></thead><tbody>
+        ${shown.map((r,i)=>`<tr class="${r===us?'us':''}"><td>${i+1}</td><td>${esc(r.name)}</td><td class="sub">${esc(r.conf)}</td><td>${r.w}-${r.l}${r.t?'-'+r.t:''}</td><td>${r.pct.toFixed(3).replace(/^0/,'')}</td><td>${r.rfg.toFixed(1)}</td><td>${r.rag.toFixed(1)}</td><td style="color:${r.rdg>=0?'var(--good)':'var(--bad)'}">${r.rdg>=0?'+':''}${r.rdg.toFixed(1)}</td></tr>`).join('')}
+        ${!S.natAll&&usIdx>=25?`<tr class="us"><td>${usIdx+1}</td><td>${esc(us.name)}</td><td class="sub">${esc(us.conf)}</td><td>${us.w}-${us.l}</td><td>${us.pct.toFixed(3).replace(/^0/,'')}</td><td>${us.rfg.toFixed(1)}</td><td>${us.rag.toFixed(1)}</td><td>${us.rdg>=0?'+':''}${us.rdg.toFixed(1)}</td></tr>`:''}
+        ${S.natAll?unplayed.sort((a,b)=>a.conf.localeCompare(b.conf)||a.name.localeCompare(b.name)).map(u=>`<tr><td class="sub">–</td><td>${esc(u.name)}</td><td class="sub">${esc(u.conf)}</td><td class="sub" colspan="5">No ${esc(d.season)} games yet</td></tr>`).join(''):''}
+        </tbody></table></div></div>
+      ${natStatsCard()}
+      ${sec('Hitting vs every '+S.team+' team',['AVG','OBP','SLG','OPS','ISO','KPCT','BBPCT','SBPCT'])}${sec('Pitching vs every '+S.team+' team',['ERA','WHIP','K9','BB9','H9','RA9','KBB'])}
+    </div>
+    <div class="col">
+      <div class="card"><div class="ch"><h3>Where we’re strong</h3></div>${strong.length?`<ul class="insights">${strong.slice(0,5).map(i=>`<li class="good">${esc(sentence(i))}</li>`).join('')}</ul>`:'<div class="empty">No stat is in the top third yet.</div>'}</div>
+      <div class="card"><div class="ch"><h3>Room to improve</h3></div>${weak.length?`<ul class="insights">${weak.slice(0,5).map(i=>`<li class="bad">${esc(sentence(i))}</li>`).join('')}</ul>`:'<div class="empty">Nothing is in the bottom third.</div>'}</div>
+      <div class="card"><div class="ch"><h3>Reading this page</h3></div><div class="howto">These rankings cover the whole division, not our region. Some conferences don’t play in the fall and many teams don’t enter box scores, which is why fewer teams appear than the full ${nat.totalTeams}. “National” stat averages add up every team’s totals (total hits ÷ total at-bats, and so on). With no minimum, a team that has played only a game or two can rank near the top or bottom, so expect movement once spring starts. Ask Claude to refresh after big weekends.</div></div>
+    </div>
+  </div>`;
+}
+
+/* ---------- roster ---------- */
+function vRoster(){
+  const d=T();if(!d)return `<div class="empty">Loading roster…</div>`;
+  const grp=p=>{const pr=(p.pos||'').split('/')[0].trim();return pr==='P'?'p':pr==='C'?'c':pr==='OF'?'of':pr?'if':'na'};
+  const yrs=['1st','2nd','3rd','4th','5th'];
+  let ps=d.roster.filter(p=>(S.rpos==='all'||grp(p)===S.rpos)&&(S.ryr==='all'||p.yr.startsWith(S.ryr)));
+  if(S.rq){const q=S.rq.toLowerCase();ps=ps.filter(p=>(p.name+' '+p.hometown+' '+p.hs+' '+p.pos+' '+p.num).toLowerCase().includes(q))}
+  ps=[...ps].sort((a,b)=>(a.num===''?999:+a.num)-(b.num===''?999:+b.num)||a.name.localeCompare(b.name));
+  const board=[...S.board].sort((a,b)=>String(a.role).localeCompare(b.role));
+  return `<div class="pagehead"><div><h2>${S.team} roster</h2><p>${d.roster.length} players · ${esc(d.season)} · from ${esc(d.origin.replace('https://',''))}</p></div></div>
+  <div class="card"><div class="ch"><h3>Club board</h3><span class="sub">Owners for deadlines and tasks</span>${E(`<button class="btn sm pri" style="margin-left:auto" data-act="add-board" type="button">${ic('plus')}Add board member</button>`)}</div>
+    ${loadingOr('board',`<div class="board">${board.map(b=>`<div class="bm"><div class="avatar">${esc((b.name||'?')[0].toUpperCase())}</div><div style="min-width:0"><b>${esc(b.name)}</b><small>${esc(b.role||'')}</small>${b.email?`<small>${esc(b.email)}</small>`:''}</div>${E(`<div class="acts"><button class="mini" data-act="edit-board" data-id="${esc(b.id)}" aria-label="Edit board member" type="button">${ic('edit')}</button><button class="mini" data-act="del-board" data-id="${esc(b.id)}" aria-label="Remove board member" type="button">${ic('trash')}</button></div>`)}</div>`).join('')}</div>`,'No board members listed yet.')}
+  </div>
+  <div class="toolbar">
+    <div class="seg">${[['all','All'],['p','Pitchers'],['c','Catchers'],['if','Infield'],['of','Outfield']].map(([k,l])=>`<button type="button" class="${S.rpos===k?'on':''}" data-rpos="${k}" aria-pressed="${S.rpos===k}">${l}</button>`).join('')}</div>
+    <div class="seg">${[['all','All years'],...yrs.map(y=>[y,y==='5th'?'5th yr':y==='1st'?'Fr':y==='2nd'?'So':y==='3rd'?'Jr':'Sr'])].map(([k,l])=>`<button type="button" class="${S.ryr===k?'on':''}" data-ryr="${k}" aria-pressed="${S.ryr===k}">${l}</button>`).join('')}</div>
+    <input class="inp" id="rq" placeholder="Filter by name, hometown, school" value="${esc(S.rq)}" style="max-width:280px;border-radius:999px" aria-label="Filter roster">
+  </div>
+  ${ps.length?`<div class="rgrid">${ps.map(p=>`<div class="card player"><div class="jersey ${p.num===''?'na':''} num">${p.num===''?'–':esc(p.num)}</div><div style="min-width:0;flex:1"><b>${esc(first(p.name))}</b>${(()=>{const k=slug(p.name);const o=officerMap().get(k);const pl=plabel(k);const chips=[o?`<span class="pill p-red">Officer${o.role?' · '+esc(o.role):''}</span>`:'',...(pl.labels||[]).map(l=>`<span class="pill p-neutral">${esc(l)}</span>`)].filter(Boolean);return chips.length?`<div style="display:flex;gap:4px;flex-wrap:wrap;margin:4px 0">${chips.join('')}</div>`:''})()}<div class="pos">${esc((p.pos||'Position TBA').replace(' / ',' · '))}</div><small>${esc(p.yr)}${p.ht?' · '+esc(p.ht):''}${p.wt?', '+esc(p.wt)+' lb':''}</small><small>${esc(p.hometown)}</small><small>${esc(p.hs)}</small></div>${E(`<button class="mini" style="align-self:flex-start" data-act="label-player" data-key="${esc(slug(p.name))}" data-name="${esc(p.name)}" aria-label="Label ${esc(first(p.name))}" title="Labels" type="button">${ic('edit')}</button>`)}</div>`).join('')}</div>`:'<div class="empty">No players match those filters.</div>'}`;
+}
+
+/* ---------- dues ---------- */
+function duesRows(){
+  const cfg=duesCfg();const base=Number(cfg.amount)||0;const pm=allPeople();const rows=[];const offK=officerMap();
+  pm.forEach(p=>{const r=S.dues.find(x=>x.id===p.key)||{};rows.push({key:p.key,name:p.name,teams:p.teams,rec:r})});
+  S.dues.filter(x=>x.custom&&!pm.has(x.id)).forEach(r=>rows.push({key:r.id,name:r.name||'Member',teams:r.team?[r.team]:[],rec:r}));
+  rows.forEach(r=>{const owed=r.rec.owed!==undefined&&r.rec.owed!==''&&r.rec.owed!==null?Number(r.rec.owed)||0:base;const paid=Number(r.rec.paid)||0;r.owed=owed;r.paid=paid;
+    r.status=offK.has(r.key)?'officer':r.rec.waived?'waived':owed<=0?(paid>0?'paid':'unset'):paid>=owed?'paid':paid>0?'partial':'unpaid'});
+  return rows;
+}
+function duesSummary(){const rows=duesRows();const act=rows.filter(r=>r.status!=='waived'&&r.status!=='unset'&&r.status!=='officer');return{owed:act.reduce((s,r)=>s+r.owed,0),paid:act.reduce((s,r)=>s+Math.min(r.paid,r.owed||r.paid),0),rows,
+  n:{paid:rows.filter(r=>r.status==='paid').length,partial:rows.filter(r=>r.status==='partial').length,unpaid:rows.filter(r=>r.status==='unpaid').length,waived:rows.filter(r=>r.status==='waived').length}}}
+function vDues(){
+  if(!S.data.D1&&!S.data.D2)return `<div class="empty">Loading…</div>`;
+  const cfg=duesCfg();const sm=duesSummary();
+  let rows=sm.rows;if(S.duesF!=='all')rows=rows.filter(r=>r.status===S.duesF);if(S.duesT!=='all')rows=rows.filter(r=>r.teams.includes(S.duesT));
+  if(S.duesQ){const q=S.duesQ.toLowerCase();rows=rows.filter(r=>first(r.name).toLowerCase().includes(q)||r.name.toLowerCase().includes(q))}
+  const order={unpaid:0,partial:1,unset:2,paid:3,waived:4,officer:5};rows=[...rows].sort((a,b)=>order[a.status]-order[b.status]||a.name.localeCompare(b.name));
+  const pct=sm.owed?Math.min(100,sm.paid/sm.owed*100):0;
+  const lab={paid:'Paid',partial:'Partial',unpaid:'Unpaid',waived:'Waived',unset:'No amount set',officer:'Officer · see Officer dues'};
+  return `<div class="pagehead"><div><h2>Player dues</h2><p>${esc(cfg.label||'Club dues')}${cfg.amount?` · ${money(cfg.amount)} per player`:''}${cfg.due?` · due ${fmtD(cfg.due,{month:'long',day:'numeric',year:'numeric'})}`:''}. Everyone on the D1 and D2 rosters is listed once. Officers linked to a roster spot pay officer dues instead.</p></div><div class="spacer"></div>${roNote()}${E(`<button class="btn" data-act="dues-settings" type="button">${ic('edit')}Dues settings</button><button class="btn pri" data-act="dues-add" type="button">${ic('plus')}Add member</button>`)}</div>
+  ${!cfg.amount&&S.loaded.settings?`<div class="banner">${S.mode==='board'?'Set the dues amount in Dues settings to start tracking.':'The board hasn’t set this season’s dues amount yet.'}</div>`:''}
+  <div class="hero hero4">
+    <div class="card kpi"><span class="lab">Collected</span><div class="money num">${money(sm.paid)}</div><div class="sub">of ${money(sm.owed)} owed</div><div class="prog good"><i style="width:${pct.toFixed(0)}%"></i></div></div>
+    <div class="card kpi"><span class="lab">Paid in full</span><div class="big num" style="color:var(--good)">${sm.n.paid}</div><div class="sub">players</div></div>
+    <div class="card kpi"><span class="lab">Partial</span><div class="big num" style="color:var(--warn)">${sm.n.partial}</div><div class="sub">players</div></div>
+    <div class="card kpi"><span class="lab">Unpaid</span><div class="big num" style="color:var(--bad)">${sm.n.unpaid}</div><div class="sub">${money(sm.owed-sm.paid)} outstanding</div></div>
+  </div>
+  <div class="toolbar">
+    <div class="seg">${[['all','All'],['unpaid','Unpaid'],['partial','Partial'],['paid','Paid'],['waived','Waived']].map(([k,l])=>`<button type="button" class="${S.duesF===k?'on':''}" data-duesf="${k}">${l}</button>`).join('')}</div>
+    <div class="seg">${[['all','Both teams'],['D1','D1'],['D2','D2']].map(([k,l])=>`<button type="button" class="${S.duesT===k?'on':''}" data-duest="${k}">${l}</button>`).join('')}</div>
+    <input class="inp" id="duesq" placeholder="Find a player" value="${esc(S.duesQ)}" style="max-width:240px;border-radius:999px" aria-label="Find a player">
+  </div>
+  <div class="card"><div class="tw"><table class="t num"><thead><tr><th>Player</th><th>Team</th><th>Owed</th><th>Paid</th><th>Status</th><th>Method</th><th>Last payment</th><th>Notes</th>${canEdit()?'<th></th>':''}</tr></thead><tbody>
+  ${!S.capsDone||(S.db&&!S.loaded.dues)?'<tr><td colspan="9" class="sub">Loading…</td></tr>':(rows.map(r=>`<tr><td class="ttl">${esc(first(r.name))}</td><td>${r.teams.map(tchip).join(' ')}</td><td>${money(r.owed)}</td><td>${money(r.paid)}</td><td><span class="pill st-${r.status}">${lab[r.status]}</span></td><td class="sub">${esc(r.rec.method||'')}</td><td class="sub">${r.rec.date?fmtD(r.rec.date):''}</td><td class="sub" style="max-width:220px;overflow-wrap:anywhere">${esc(r.rec.notes||'')}</td>${E(`<td style="white-space:nowrap"><button class="btn sm" data-act="dues-edit" data-key="${esc(r.key)}" data-name="${esc(r.name)}" type="button">Record</button>${r.rec.custom?`<button class="mini" data-act="dues-del" data-key="${esc(r.key)}" aria-label="Remove member" type="button">${ic('trash')}</button>`:''}</td>`)}</tr>`).join('')||`<tr><td colspan="9" class="sub">No one matches.</td></tr>`)}
+  </tbody></table></div></div>`;
+}
+
+/* ---------- attendance ---------- */
+function sessPct(s){const r=rosterOf(s.team);if(!r.length)return null;const m=s.marks||{};const marked=r.filter(p=>m[p.key]);if(!marked.length)return null;return Math.round(marked.filter(p=>m[p.key]==='P'||m[p.key]==='L').length/marked.length*100)}
+function vAttendance(){
+  const d=T();if(!d)return `<div class="empty">Loading…</div>`;
+  const ros=rosterOf(S.team).sort((a,b)=>a.name.localeCompare(b.name));
+  const sess=S.attendance.filter(a=>a.team===S.team).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  let cur=sess.find(s=>s.id===S.sessSel[S.team])||sess[0];
+  const m=cur?(cur.marks||{}):{};const cnt={P:0,L:0,A:0,E:0};ros.forEach(p=>{if(own(cnt,m[p.key]))cnt[m[p.key]]++});
+  const season=ros.map(p=>{let att=0,tot=0,ab=0;sess.forEach(s=>{const v=(s.marks||{})[p.key];if(!v||v==='E')return;tot++;if(v==='P'||v==='L')att++;if(v==='A')ab++});return{p,att,tot,ab,pct:tot?Math.round(att/tot*100):null}});
+  return `<div class="pagehead"><div><h2>${S.team} attendance</h2><p>Mark each player Present, Late, Absent or Excused for every practice or event. Excused absences don’t count against a player.</p></div><div class="spacer"></div>${roNote()}${E(`<button class="btn pri" data-act="att-new" type="button">${ic('plus')}New session</button>`)}</div>
+  <div class="attwrap">
+    <div class="card"><div class="ch"><h3>Sessions</h3><span class="sub">${sess.length}</span></div>
+      ${loadingOr('attendance',sess.length?`<div class="sesslist">${sess.map(s=>{const p=sessPct(s);return `<button type="button" class="sess ${cur&&s.id===cur.id?'on':''}" data-sess="${esc(s.id)}"><b>${esc(s.title||'Practice')}</b><small>${fmtD(s.date,{weekday:'short',month:'short',day:'numeric'})}${p==null?' · not taken':` · ${p}% present`}</small><div class="prog good" style="height:6px"><i style="width:${p||0}%"></i></div></button>`}).join('')}</div>`:`<div class="empty">${S.mode==='board'?'Start a session for each practice.':'No sessions yet.'}</div>`,'')}
+    </div>
+    <div class="col">
+      ${cur?`<div class="card"><div class="ch"><h3>${esc(cur.title||'Practice')} · ${esc(fmtD(cur.date,{weekday:'long',month:'long',day:'numeric'}))}</h3><span class="sub">${cnt.P} present · ${cnt.L} late · ${cnt.A} absent · ${cnt.E} excused · ${ros.length-cnt.P-cnt.L-cnt.A-cnt.E} unmarked</span>
+        ${E(`<div style="margin-left:auto;display:flex;gap:6px"><button class="btn sm" data-act="att-allp" data-id="${esc(cur.id)}" type="button">Mark unmarked present</button><button class="btn sm" data-act="att-edit" data-id="${esc(cur.id)}" type="button">${ic('edit')}Edit</button><button class="mini" data-act="att-del" data-id="${esc(cur.id)}" aria-label="Delete session" type="button">${ic('trash')}</button></div>`)}</div>
+        ${cur.notes?`<p class="sub" style="margin:0 0 8px;white-space:pre-wrap">${esc(cur.notes)}</p>`:''}
+        <div>${ros.map(p=>{const v=m[p.key]||'';return `<div class="attrow"><span class="jn num">${p.num===''?'–':esc(p.num)}</span><span><b>${esc(first(p.name))}</b> <span class="sub">${esc((p.pos||'').replace(' / ',' · '))}</span></span>${canEdit()?`<span class="pla" role="group" aria-label="Attendance for ${esc(first(p.name))}">${Object.keys(MARKS).map(k=>`<button type="button" class="${k} ${v===k?'on':''}" data-mark="${k}" data-key="${esc(p.key)}" data-id="${esc(cur.id)}" title="${MARKS[k]}" aria-pressed="${v===k}">${k}</button>`).join('')}</span>`:`<span class="mk ${v||'none'}" title="${v?MARKS[v]:'Not marked'}">${v||'–'}</span>`}</div>`}).join('')}</div></div>`:''}
+      <div class="card"><div class="ch"><h3>Season attendance</h3><span class="sub">${sess.length} session${sess.length===1?'':'s'} · late counts as present</span></div>
+        ${sess.length?`<div class="tw"><table class="t num"><thead><tr><th>Player</th><th>Attended</th><th>Absences</th><th>Rate</th><th style="width:40%"></th></tr></thead><tbody>${season.sort((a,b)=>(a.pct??101)-(b.pct??101)).map(r=>`<tr><td class="ttl">${esc(first(r.p.name))}</td><td>${r.att} / ${r.tot}</td><td style="color:${r.ab?'var(--bad)':'inherit'}">${r.ab}</td><td style="font-weight:700;color:${r.pct==null?'var(--dim)':r.pct<70?'var(--bad)':r.pct<85?'var(--warn)':'var(--good)'}">${r.pct==null?'–':r.pct+'%'}</td><td><div class="prog ${r.pct>=85?'good':''}"><i style="width:${r.pct||0}%"></i></div></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Rates appear after the first session.</div>'}
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ---------- carpools ---------- */
+function vCarpools(){
+  const t=todayS();const trips=[...S.carpools].sort((a,b)=>{const au=(a.date||'9')>=t,bu=(b.date||'9')>=t;if(au!==bu)return au?-1:1;return au?(a.date||'9').localeCompare(b.date||'9'):(b.date||'').localeCompare(a.date||'')});
+  const away=[...seriesList('D1'),...seriesList('D2')].filter(s=>!s.home&&s.end>=t&&!S.carpools.some(c=>c.series===s.team+'|'+s.week+'|'+s.opponent));
+  const tripCard=c=>{const cars=Array.isArray(c.cars)?c.cars:[];const needs=Array.isArray(c.needs)?c.needs:[];const seats=cars.reduce((s,x)=>s+(Number(x.seats)||0),0);const riders=cars.reduce((s,x)=>s+((x.riders||[]).length),0);const past=c.date&&c.date<t;
+    return `<div class="card" style="${past?'opacity:.7':''}"><div class="ch"><h3 style="text-transform:none;letter-spacing:0;font-size:17px;color:var(--ink)">${tchip(c.team)} ${esc(c.title||'Trip')}</h3><span class="sub">${c.date?fmtD(c.date,{weekday:'short',month:'short',day:'numeric'}):'Date TBA'}${c.depart?' · leave '+fmtT(c.depart):''}${c.meet?' · meet at '+esc(c.meet):''}${c.dest?' · to '+esc(c.dest):''}</span>
+      <div style="margin-left:auto;display:flex;gap:6px;align-items:center"><span class="pill ${riders+needs.length>seats?'p-high':'p-low'}">${riders}/${seats} seats filled${needs.length?` · ${needs.length} need a ride`:''}</span>${E(`<button class="btn sm" data-act="car-add" data-id="${esc(c.id)}" type="button">${ic('plus')}Add car</button><button class="mini" data-act="trip-edit" data-id="${esc(c.id)}" aria-label="Edit trip" type="button">${ic('edit')}</button><button class="mini" data-act="trip-del" data-id="${esc(c.id)}" aria-label="Delete trip" type="button">${ic('trash')}</button>`)}</div></div>
+      ${c.notes?`<p class="sub" style="margin:0 0 10px;white-space:pre-wrap">${esc(c.notes)}</p>`:''}
+      <div class="cars">${cars.map(car=>{const rs=Array.isArray(car.riders)?car.riders:[];const n=Number(car.seats)||0;return `<div class="car"><div class="hd">${ic('car','width="18" height="18" style="color:var(--red)"')}<div style="min-width:0"><b>${esc(car.driver||'Driver')}</b>${car.from?`<div class="sub">from ${esc(car.from)}</div>`:''}</div>${E(`<button class="mini" style="margin-left:auto" data-act="car-edit" data-id="${esc(c.id)}" data-car="${esc(car.id)}" aria-label="Edit car" type="button">${ic('edit')}</button><button class="mini" data-act="car-del" data-id="${esc(c.id)}" data-car="${esc(car.id)}" aria-label="Remove car" type="button">${ic('trash')}</button>`)}</div>
+        <div class="seats" aria-label="${rs.length} of ${n} seats filled">${Array.from({length:Math.max(n,rs.length)},(_,i)=>`<i class="${i<rs.length?'f':''}"></i>`).join('')}</div>
+        <ul class="riders">${rs.map((r,i)=>`<li>${esc(r)}${E(`<button class="mini" data-act="rider-del" data-id="${esc(c.id)}" data-car="${esc(car.id)}" data-i="${i}" aria-label="Remove ${esc(r)}" type="button">${ic('x')}</button>`)}</li>`).join('')||'<li class="sub">No riders yet</li>'}</ul>
+        ${E(rs.length<n?`<form class="addr" data-addrider="${esc(c.id)}|${esc(car.id)}"><input class="inp" name="r" list="peopleList" placeholder="Add rider" aria-label="Add rider to ${esc(car.driver||'car')}" id="ar-${esc(c.id)}-${esc(car.id)}"><button class="btn sm" type="submit">Add</button></form>`:'<span class="sub">Car is full</span>')}
+        ${car.notes?`<small class="sub">${esc(car.notes)}</small>`:''}</div>`}).join('')||`<div class="empty">${S.mode==='board'?'No cars yet. Add drivers with Add car.':'No cars yet.'}</div>`}
+        <div class="car" style="background:rgba(255,248,235,.7)"><div class="hd"><b>Needs a ride</b></div><ul class="riders">${needs.map((r,i)=>`<li>${esc(r)}${E(`<button class="mini" data-act="need-del" data-id="${esc(c.id)}" data-i="${i}" aria-label="Remove ${esc(r)}" type="button">${ic('x')}</button>`)}</li>`).join('')||'<li class="sub">Nobody listed</li>'}</ul>
+          ${E(`<form class="addr" data-addneed="${esc(c.id)}"><input class="inp" name="r" list="peopleList" placeholder="Add name" aria-label="Add someone who needs a ride" id="an-${esc(c.id)}"><button class="btn sm" type="submit">Add</button></form>`)}</div>
+      </div></div>`};
+  return `<div class="pagehead"><div><h2>Carpools</h2><p>Who’s driving, who’s riding, and who still needs a seat for each road trip.</p></div><div class="spacer"></div>${roNote()}${E(`<button class="btn pri" data-act="trip-new" type="button">${ic('plus')}New trip</button>`)}</div>
+  <datalist id="peopleList">${people().map(p=>`<option value="${esc(p)}"></option>`).join('')}</datalist>
+  ${canEdit()&&away.length?`<div class="card"><div class="ch"><h3>Away series without a carpool</h3></div><div class="quick">${away.map(s=>`<button type="button" class="serchip" data-act="trip-from-series" data-s="${esc(s.team+'|'+s.week+'|'+s.opponent)}">${tchip(s.team)} at ${esc(s.opponent)}<small>${esc(s.week)} · week of ${fmtD(s.start)} · create trip</small></button>`).join('')}</div></div>`:''}
+  ${loadingOr('carpools',`<div class="trips">${trips.map(tripCard).join('')}</div>`,S.mode==='board'?'No trips yet. Create one for each away weekend.':'No trips posted yet.')}`;
+}
+
+/* ---------- officer dues ---------- */
+function officerRows(){const c=duesCfg();const base=Number(c.officerAmount)||0;const om=officerMap();const pm=allPeople();const out=[];
+  const mk=(id,coll,name,role,teams,r)=>{const owed=r.owed!==undefined&&r.owed!==null&&r.owed!==''?Number(r.owed)||0:base;const paid=Number(r.paid)||0;
+    const status=r.waived?'waived':owed<=0?(paid>0?'paid':'unset'):paid>=owed?'paid':paid>0?'partial':'unpaid';return {id,coll,name,role,teams,r,owed,paid,status}};
+  om.forEach(o=>{const p=pm.get(o.key);out.push(mk(o.key,'dues',p?p.name:o.name,o.role,p?p.teams:[],S.dues.find(x=>x.id===o.key)||{}))});
+  S.board.filter(b=>!b.playerKey).forEach(b=>out.push(mk(b.id,'officerdues',b.name,b.role||'',[],S.officerdues.find(x=>x.id===b.id)||{})));
+  return out.sort((a,b)=>String(a.role).localeCompare(b.role)||String(a.name).localeCompare(b.name))}
+function vOfficerDues(){
+  const c=duesCfg();const rows=officerRows();const act=rows.filter(r=>r.status!=='waived'&&r.status!=='unset');
+  const owed=act.reduce((s,r)=>s+r.owed,0),paid=act.reduce((s,r)=>s+Math.min(r.paid,r.owed),0);const pct=owed?Math.min(100,paid/owed*100):0;
+  const lab={paid:'Paid',partial:'Partial',unpaid:'Unpaid',waived:'Waived',unset:'No amount set'};
+  return `<div class="pagehead"><div><h2>Officer dues</h2><p>${esc(c.officerLabel||'Officer dues')}${c.officerAmount?` · ${money(c.officerAmount)} per officer`:''}${c.officerDue?` · due ${fmtD(c.officerDue,{month:'long',day:'numeric',year:'numeric'})}`:''}. Officers are players you’ve labeled as officers (Roster → Label, or the officer box when recording dues) plus anyone on the Club board list. They pay this rate instead of player dues.</p></div><div class="spacer"></div>${E(`<button class="btn" data-act="odues-settings" type="button">${ic('edit')}Officer dues settings</button>`)}</div>
+  ${!c.officerAmount&&S.loaded.settings?`<div class="banner">Set the officer amount in Officer dues settings. Each officer can also have their own amount.</div>`:''}
+  <div class="hero hero4">
+    <div class="card kpi"><span class="lab">Collected</span><div class="money num">${money(paid)}</div><div class="sub">of ${money(owed)} owed</div><div class="prog good"><i style="width:${pct.toFixed(0)}%"></i></div></div>
+    <div class="card kpi"><span class="lab">Officers</span><div class="big num">${rows.length}</div><div class="sub">labeled players and board members</div></div>
+    <div class="card kpi"><span class="lab">Paid in full</span><div class="big num" style="color:var(--good)">${rows.filter(r=>r.status==='paid').length}</div></div>
+    <div class="card kpi"><span class="lab">Still owe</span><div class="big num" style="color:var(--bad)">${rows.filter(r=>r.status==='unpaid'||r.status==='partial').length}</div><div class="sub">${money(owed-paid)} outstanding</div></div>
+  </div>
+  <div class="card">${loadingOr('board',rows.length?`<div class="tw"><table class="t num"><thead><tr><th>Officer</th><th>Role</th><th>Owed</th><th>Paid</th><th>Status</th><th>Method</th><th>Last payment</th><th>Notes</th>${canEdit()?'<th></th>':''}</tr></thead><tbody>
+    ${rows.map(x=>`<tr><td class="ttl">${esc(first(x.name))} ${x.teams.map(tchip).join(' ')}</td><td class="sub">${esc(x.role||'')}</td><td>${money(x.owed)}${x.r.owed!==undefined&&x.r.owed!==null&&x.r.owed!==''?' <span class="tchip">custom</span>':''}</td><td>${money(x.paid)}</td><td><span class="pill st-${x.status}">${lab[x.status]}</span></td><td class="sub">${esc(x.r.method||'')}</td><td class="sub">${x.r.date?fmtD(x.r.date):''}</td><td class="sub" style="max-width:220px;overflow-wrap:anywhere">${esc(x.r.notes||'')}</td>${E(`<td><button class="btn sm" data-act="${x.coll==='dues'?'dues-edit':'odues-edit'}" data-id="${esc(x.id)}" data-key="${esc(x.id)}" data-name="${esc(x.name)}" type="button">Record</button></td>`)}</tr>`).join('')}
+  </tbody></table></div>`:'<div class="empty">No officers yet. Label players as officers on the Roster tab (Label button), or add people to the Club board list.</div>','')}</div>`;
+}
+function oduesSettingsForm(){const c=duesCfg();
+  modal({title:'Officer dues settings',submit:'Save',body:`<div class="field"><label for="od-label">Name</label><input class="inp" id="od-label" name="label" maxlength="80" value="${esc(c.officerLabel||'Spring 2027 officer dues')}"></div>
+  <div class="grid2"><div class="field"><label for="od-amt">Amount per officer ($)</label><input class="inp" type="number" min="0" step="0.01" id="od-amt" name="amount" value="${esc(c.officerAmount??'')}" required></div><div class="field"><label for="od-due">Due date</label><input class="inp" type="date" id="od-due" name="due" value="${esc(c.officerDue||'')}"></div></div>`,
+  onSubmit:d=>{const a=Number(d.amount);if(!(a>=0)){toast('Enter an amount.');return false}return upsert('settings','dues',{officerLabel:d.label.trim(),officerAmount:a,officerDue:d.due||''})}})}
+function oduesForm(id){const b=S.board.find(x=>x.id===id);if(!b)return;const r=S.officerdues.find(x=>x.id===id)||{};const c=duesCfg();
+  modal({title:`Officer dues: ${b.name}`,submit:'Save',body:`
+  <div class="grid2"><div class="field"><label for="ou-paid">Total paid so far ($)</label><input class="inp" type="number" min="0" step="0.01" id="ou-paid" name="paid" value="${esc(r.paid??'')}"></div><div class="field"><label for="ou-owed">Amount owed ($)</label><input class="inp" type="number" min="0" step="0.01" id="ou-owed" name="owed" value="${esc(r.owed??'')}" placeholder="${esc(c.officerAmount??'Officer rate')}"></div></div>
+  <div class="grid2"><div class="field"><label for="ou-method">Method</label><select class="inp" id="ou-method" name="method">${opt(['','Venmo','Cash','Check','Zelle','PayPal','Other'],r.method||'')}</select></div><div class="field"><label for="ou-date">Payment date</label><input class="inp" type="date" id="ou-date" name="date" value="${esc(r.date||'')}"></div></div>
+  <label style="display:flex;gap:8px;align-items:center;font-size:13px"><input type="checkbox" name="waived" ${r.waived?'checked':''}> Waived this season</label>
+  <div class="field"><label for="ou-notes">Notes</label><input class="inp" id="ou-notes" name="notes" maxlength="200" value="${esc(r.notes||'')}"></div>`,
+  onSubmit:d=>upsert('officerdues',id,{name:b.name,paid:d.paid===''?0:Number(d.paid)||0,owed:d.owed===''?null:Number(d.owed)||0,method:d.method||'',date:d.date||'',notes:d.notes.trim(),waived:!!d.waived})})}
+
+/* ---------- data refresh ---------- */
+function loadData(bust){return Promise.all(TEAMS.map(t=>fetch(`data/${t.toLowerCase()}.json?v=${bust?Date.now():BUILD}`,{cache:'no-cache'}).then(r=>{if(!r.ok)throw 0;return r.json()}).then(d=>{S.data[t]=d}).catch(()=>{S.dataErr=true}))).then(scheduleRender)}
+function vRefresh(){
+  const src=S.settings.find(s=>s.id==='ncba')||{};const req=S.settings.find(s=>s.id==='refresh')||{};
+  const card=t=>{const d=S.data[t];if(!d)return `<div class="card"><div class="empty">Loading ${t}…</div></div>`;const link=t==='D1'?src.d1Url:src.d2Url;const changed=link&&link!==d.teamUrl;
+    return `<div class="card"><div class="ch"><h3>${tchip(t)} ${t==='D1'?'Division 1':'Division 2'} team</h3><a class="link" href="${esc(d.teamUrl)}" target="_blank" rel="noopener">NCBA page ${ic('ext')}</a></div>
+      <div class="plist2">
+        <div class="pl2"><div><b>Season</b><small>${esc(d.conference)}</small></div><div class="st">${esc(d.season)}</div></div>
+        <div class="pl2"><div><b>Last imported</b><small>Roster, schedule, results, standings, stats, opponents, national averages</small></div><div class="st">${new Date(d.syncedAt).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}</div></div>
+        <div class="pl2"><div><b>What’s loaded</b><small>${d.roster.length} players · ${d.games.length} games · ${d.hitting.rows.length} hitters · ${d.pitching.rows.length} pitchers</small></div><div class="st">${record(t).w}-${record(t).l}</div></div>
+        ${changed?`<div class="pl2" style="border-color:rgba(217,130,26,.5)"><div><b>New season link saved</b><small style="overflow-wrap:anywhere">${esc(link)}</small></div><div class="st" style="color:var(--warn)">Next refresh uses this</div></div>`:''}
+      </div></div>`};
+  const pending=req.status==='pending';
+  return `<div class="pagehead"><div><h2>Data refresh</h2><p>Re-imports rosters, schedules, results, standings, team and player stats, opponent stats and national averages for both teams from the NCBA sites. Your club’s own data (calendar, dues, attendance, carpools and the rest) is never touched.</p></div></div>
+  <div class="card" style="border-left:5px solid ${pending?'var(--warn)':'var(--good)'}"><div class="ch"><h3>Refresh status</h3></div>
+    <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+      <div style="flex:1;min-width:260px">${pending?`<b>Refresh requested ${new Date(req.requestedAt).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}</b><div class="sub">Waiting for the stats files to be updated.${req.note?' Note: '+esc(req.note):''}</div>`:req.handledAt?`<b>Last full refresh ${new Date(req.handledAt).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}</b><div class="sub">No refresh waiting.</div>`:'<b>No refresh requested yet</b><div class="sub">Request one after a big weekend or when a new season starts.</div>'}</div>
+      ${E(`<button class="btn pri" data-act="refresh-request" type="button">${pending?'Update request':'Request full refresh'}</button>`)}<button class="btn" data-act="reload-data" type="button">Reload latest data</button>${E(`<button class="btn" data-act="import-backup" type="button">Import club data backup</button>`)}${S.user?`<button class="btn" data-act="manage-editors" type="button">Board editors</button>`:''}${S.user?`<button class="btn" data-act="sign-out" type="button">Sign out (${esc(S.user.email)})</button>`:''}
+    </div>
+    <p class="sub" style="margin:12px 0 0">The NCBA sites don’t let other pages read their data directly, so the stats are stored as files in the site’s GitHub repo (<code>data/d1.json</code> and <code>data/d2.json</code>). After you request a refresh, ask Claude in the site owner’s chat to “refresh the club dashboard stats”; it re-imports from NCBA and updates those files. When it’s done, press Reload latest data.</p>
+  </div>
+  <div class="two">${card('D1')}${card('D2')}</div>
+  <div class="card"><div class="ch"><h3>New season or new team page</h3>${E(`<button class="btn sm" data-act="src-edit" type="button">${ic('edit')}Update NCBA links</button>`)}</div>
+    <div class="howto">When NCBA opens a new season, the team page link changes. Open each team page on clubbaseball.org (D1) and div2.clubbaseball.org (D2), pick the new season, copy the address, and paste it here with “Update NCBA links”. The next refresh imports the new rosters and stats from those links.</div></div>`;
+}
+function srcForm(){const s=S.settings.find(x=>x.id==='ncba')||{};
+  modal({title:'NCBA team page links',submit:'Save links',wide:true,body:`
+  <div class="field"><label for="sr-d1">D1 team page (clubbaseball.org)</label><input class="inp" id="sr-d1" name="d1" value="${esc(s.d1Url||S.data.D1?.teamUrl||'')}"></div>
+  <div class="field"><label for="sr-d2">D2 team page (div2.clubbaseball.org)</label><input class="inp" id="sr-d2" name="d2" value="${esc(s.d2Url||S.data.D2?.teamUrl||'')}"></div>
+  <p class="sub" style="margin:0">Each link should look like …/league/team/?team=…&amp;season=…</p>`,
+  onSubmit:d=>{const ok=u=>!u||/^https:\/\/(div2\.)?clubbaseball\.org\/league\/team\/\?team=[\w-]+&season=[\w-]+/.test(u.trim());if(!ok(d.d1)||!ok(d.d2)){toast('Paste the full NCBA team page address, including team= and season=.');return false}
+    return upsert('settings','ncba',{d1Url:d.d1.trim(),d2Url:d.d2.trim()})}})}
+function refreshForm(){const r=S.settings.find(x=>x.id==='refresh')||{};
+  modal({title:'Request a full refresh',submit:'Request refresh',body:`<p class="sub" style="margin:0">This flags a re-import of both teams from NCBA${(S.settings.find(x=>x.id==='ncba')||{}).d1Url?' using the saved season links':''}.</p>
+  <div class="field"><label for="rf-note">Note (optional)</label><input class="inp" id="rf-note" name="note" maxlength="200" value="${r.status==='pending'?esc(r.note||''):''}" placeholder="New spring rosters are up"></div>`,
+  onSubmit:d=>upsert('settings','refresh',{status:'pending',requestedAt:Date.now(),note:d.note.trim()})})}
+
+/* ---------- board editors list (only the site owner can save it; Firestore rules enforce that) ---------- */
+async function manageEditors(){
+  if(!FB||!S.user){signIn();return}
+  let cur=[];try{const a=await FB.F.getDoc(FB.F.doc(FB.fs,'access/editors'));cur=a.exists()&&a.data().emails||[]}catch(e){}
+  if(!cur.includes(S.user.email))cur=[S.user.email,...cur];
+  modal({title:'Board editors',submit:'Save editors',body:`
+  <div class="field"><label for="ed-list">Google accounts that can sign in and edit (one per line)</label><textarea class="inp" id="ed-list" name="list" rows="8">${esc(cur.join('\n'))}</textarea></div>
+  <p class="sub" style="margin:0">Only the site owner can save this list. Everyone else with the password still sees the member view.</p>`,
+  onSubmit:async d=>{const emails=[...new Set(d.list.split(/[\s,;]+/).map(x=>x.trim().toLowerCase()).filter(x=>/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x)))];
+    if(!emails.length){toast('Add at least one email address.');return false}
+    try{await FB.F.setDoc(FB.F.doc(FB.fs,'access/editors'),{emails});S.canWrite=emails.includes(S.user.email);COLS.forEach(subscribe);scheduleRender();toast(`Saved ${emails.length} board editor${emails.length>1?'s':''}.`)}
+    catch(e){toast(e&&e.code==='permission-denied'?'Only the site owner can change the editors list.':'Couldn’t save the editors list. Try again.');return false}}})}
+
+/* ---------- one-time import of a JSON backup of the club's shared data ---------- */
+function importBackup(){
+  if(!canEdit()){toast('Sign in with an approved board account first.');return}
+  const inp=document.createElement('input');inp.type='file';inp.accept='application/json,.json';
+  inp.onchange=async()=>{const f=inp.files&&inp.files[0];if(!f)return;let data;try{data=JSON.parse(await f.text())}catch(e){toast('That file isn’t a valid backup.');return}
+    const cols=Object.keys(data||{}).filter(c=>COLS.includes(c)&&Array.isArray(data[c]));let n=0;
+    if(!cols.length){toast('No club data found in that file.');return}
+    const ok=await write(async()=>{for(const c of cols)for(const d of data[c]){if(!d||!d.id)continue;const {id,...rest}=d;await FB.F.setDoc(FB.F.doc(FB.fs,`${c}/${id}`),enc(rest));n++}});
+    if(ok)toast(`Imported ${n} items.`)};
+  inp.click();
+}
+
+/* ---------- Google Sheets sync ---------- */
+const GS='Google Sheets',GS_RANGE='A1:ZZ5000';
+const sheetIdFrom=u=>{const m=String(u||'').match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]{20,})/);return m?m[1]:(/^[a-zA-Z0-9_-]{30,}$/.test(String(u||'').trim())?String(u).trim():null)};
+function pickKeys(schema){const props=schema&&schema.properties||{};const p=Object.keys(props);
+  const id=p.find(k=>/spreadsheet.?id/i.test(k))||p.find(k=>/(file|sheet|document).?id|^id$/i.test(k))||p.find(k=>/url/i.test(k))||p[0];
+  const range=p.find(k=>/^ranges?$/i.test(k))||p.find(k=>/range|a1/i.test(k));
+  return {id,range,rangeArray:!!(range&&props[range]&&props[range].type==='array'),url:!!(id&&/url/i.test(id))}}
+function find2D(x,depth=0){if(depth>6||x==null)return null;if(Array.isArray(x)){if(x.length&&x.every(Array.isArray))return x;for(const v of x){const r=find2D(v,depth+1);if(r)return r}return null}
+  if(typeof x==='object'){if(Array.isArray(x.values)&&x.values.every(Array.isArray))return x.values;for(const v of Object.values(x)){const r=find2D(v,depth+1);if(r)return r}}return null}
+async function readSheet(form,interactive){
+  const res=await gapi(`https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(form.sheetId)}/values/${encodeURIComponent(GS_RANGE)}?majorDimension=ROWS`,interactive);
+  const g=(res.values||[]);if(!g.length)throw {code:'empty'};
+  return g.map(r=>r.map(v=>v==null?'':String(v)));
+}
+async function readSheetViaClaude(form){
+  const mcp=await window.claude?.use?.('mcp');if(!mcp)throw {code:'no_mcp'};
+  const id=form.sheetId;const build=k=>{const o={};o[k.id]=k.url?form.sheetUrl:id;if(k.range)o[k.range]=k.rangeArray?[GS_RANGE]:GS_RANGE;return o};
+  const call=input=>mcp.callTool(GS,'get_values',input,{cache:false});
+  let res;
+  if(S.gsKeys)res=await call(build(S.gsKeys));
+  else{try{res=await call({spreadsheetId:id,range:GS_RANGE})}catch(e){if(!e||!['tool_error','bad_request'].includes(e.code))throw e;const d=await mcp.describeTool(GS,'get_values');S.gsKeys=pickKeys(d.inputSchema);res=await call(build(S.gsKeys))}}
+  let grid=find2D(res&&res.payload);
+  if(!grid&&typeof res?.payload==='string')grid=parseDelimited(res.payload);
+  if(!grid){const t=(res?.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('\n');try{grid=find2D(JSON.parse(t))}catch(_){grid=t?parseDelimited(t):null}}
+  if(!grid||grid.length<1)throw {code:'empty'};
+  return grid.map(r=>r.map(v=>v==null?'':String(v)));
+}
+const gsMsg=e=>{const c=e&&e.code;return c==='needs_token'?'Press Sync and allow Google Sheets access when Google asks.'
+  :c==='api_off'?'The Google Sheets or Drive API is turned off for this Firebase project. Turn it on in the Google Cloud console (APIs & Services → Library).'
+  :c==='no_access'?'Your Google account can’t open that sheet. Ask its owner to share it with you.'
+  :c==='not_found'?'That sheet wasn’t found. Check the link.'
+  :c==='google_error'?'Google didn’t answer. Try Sync again in a minute.'
+  :c==='no_mcp'?'Syncing works when the dashboard is open on claude.ai while signed in.'
+  :c==='server_not_connected'?'Connect Google Sheets in claude.ai Settings → Connectors, then press Sync again.'
+  :c==='needs_reauth'?'Reconnect Google Sheets in claude.ai Settings → Connectors, then press Sync again.'
+  :c==='not_in_manifest'?'Google Sheets is turned off for this page. Allow it when claude.ai asks, then press Sync again.'
+  :c==='approval_required'?'Google Sheets needs your OK. Press Sync and allow it when claude.ai asks.'
+  :c==='selection_required'?'Choose which Google Sheets connection to use when claude.ai asks, then press Sync again.'
+  :c==='blocked_by_policy'?'Your organization blocks Google Sheets for this page.'
+  :c==='empty'?'That sheet came back empty. Check it’s the form’s response sheet.'
+  :c==='tool_error'?'Google Sheets couldn’t read that sheet. Make sure the Google account you connected can open it.'
+  :c==='server_unavailable'?'Google Sheets didn’t answer. Try Sync again in a minute.'
+  :'Sync didn’t work. Try again.'};
+async function syncForm(id,quiet){
+  const f=find('forms',id);if(!f||!f.sheetId)return;if(!canEdit()){if(!quiet)toast('Only the board can sync responses.');return}
+  S.syncing[id]=true;S.syncMsg[id]='';scheduleRender();
+  try{const grid=await readSheet(f,!quiet);const columns=grid[0].map((c,i)=>c.trim()||`Column ${i+1}`);const rows=grid.slice(1).filter(r=>r.some(v=>String(v).trim())).map(r=>columns.map((_,i)=>String(r[i]??'').slice(0,2000)));
+    const v={columns,rows,syncedAt:Date.now()};if(JSON.stringify(v).length>240000)throw {code:'too_big'};
+    const ok=await updDoc('forms',id,v);if(ok&&!quiet)toast(`Synced ${rows.length} responses.`);
+  }catch(e){S.syncMsg[id]=e&&e.code==='too_big'?'This sheet has too many responses to store in one set. Split it or archive old responses.':gsMsg(e);if(!quiet)toast(S.syncMsg[id])}
+  S.syncing[id]=false;scheduleRender();
+}
+const GD='Google Drive';
+const folderIdFrom=u=>{const m=String(u||'').match(/\/folders\/([a-zA-Z0-9_-]{10,})/);return m?m[1]:(/^[a-zA-Z0-9_-]{20,}$/.test(String(u||'').trim())?String(u).trim():null)};
+const formsCfg=()=>S.settings.find(s=>s.id==='forms')||{};
+async function scanFolder(quiet){
+  const cfg=formsCfg();if(!cfg.folderId||!canEdit())return;
+  S.scanning=true;S.scanMsg='';scheduleRender();
+  try{
+    let files=[],token=null,pages=0;
+    do{const q=`'${cfg.folderId}' in parents and mimeType = 'application/vnd.google-apps.spreadsheet' and trashed = false`;
+      const p=await gapi(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&pageSize=100&fields=${encodeURIComponent('nextPageToken,files(id,name,webViewLink)')}&supportsAllDrives=true&includeItemsFromAllDrives=true${token?'&pageToken='+encodeURIComponent(token):''}`,!quiet);
+      files=files.concat((p.files||[]).map(f=>({id:f.id,title:f.name,viewUrl:f.webViewLink})));token=p.nextPageToken||null;pages++}while(token&&pages<5);
+    const known=new Set([...S.forms.map(f=>f.sheetId).filter(Boolean),...(Array.isArray(cfg.hidden)?cfg.hidden.map(h=>h&&h.id):[])]);const fresh=files.filter(f=>f&&f.id&&!known.has(f.id));
+    for(const f of fresh){let nid=null;const name=String(f.title||'Form').replace(/\s*\((Responses|respuestas)\)\s*$/i,'').slice(0,80);
+      const ok=await write(async()=>{const ref=await S.db.collection('forms').add({name,sheetId:f.id,sheetUrl:f.viewUrl||`https://docs.google.com/spreadsheets/d/${f.id}`,fromFolder:true,columns:[],rows:[],importedAt:Date.now(),createdAt:Date.now()});nid=ref.id});
+      if(ok&&nid){S.autoSynced.add(nid);await syncForm(nid,true)}}
+    await upsert('settings','forms',{folderId:cfg.folderId,folderUrl:cfg.folderUrl||'',scannedAt:Date.now(),found:files.length});
+    if(!quiet)toast(fresh.length?`Added ${fresh.length} new form${fresh.length>1?'s':''} from the folder.`:'No new forms in the folder.');
+  }catch(e){const c=e&&e.code;S.scanMsg=['needs_token','api_off','no_access','not_found','google_error'].includes(c)?gsMsg(e):c==='server_not_connected'?'Connect Google Drive in claude.ai Settings → Connectors, then check the folder again.':c==='needs_reauth'?'Reconnect Google Drive in claude.ai Settings → Connectors.':c==='not_in_manifest'||c==='approval_required'?'Google Drive needs your OK for this page. Press Check folder now and allow it when claude.ai asks.':c==='tool_error'?'Google Drive couldn’t open that folder. Make sure your Google account can see it.':'Checking the folder didn’t work. Try again.';if(!quiet)toast(S.scanMsg)}
+  S.scanning=false;scheduleRender();
+}
+function hiddenForm(){const c=formsCfg();const hid=Array.isArray(c.hidden)?c.hidden:[];
+  modal({title:'Forms removed from the dashboard',submit:'Restore selected',body:`<p class="sub" style="margin:0">These sheets are still in Google Drive; the dashboard just skips them. Check any you want back.</p>${hid.map((h,i)=>`<label style="display:flex;gap:8px;align-items:center;font-size:13.5px"><input type="checkbox" name="h${i}"> ${esc(h.name||h.id)}</label>`).join('')}`,
+  onSubmit:async d=>{const keep=hid.filter((h,i)=>!d['h'+i]);if(keep.length===hid.length)return true;const ok=await upsert('settings','forms',{hidden:keep});if(ok)setTimeout(()=>scanFolder(false),300);return ok}})}
+function folderForm(){const c=formsCfg();modal({title:'Watch a Google Drive folder',submit:'Save and check now',body:`<div class="field"><label for="fd-url">Folder address</label><input class="inp" id="fd-url" name="url" required value="${esc(c.folderUrl||'')}" placeholder="https://drive.google.com/drive/folders/…"></div><p class="sub" style="margin:0">Every Google Sheet in this folder becomes a form list here. New response sheets saved to the folder show up on their own.</p>`,
+  onSubmit:async d=>{const id=folderIdFrom(d.url);if(!id){toast('Paste the Google Drive folder address (drive.google.com/drive/folders/…).');return false}const ok=await upsert('settings','forms',{folderId:id,folderUrl:d.url.trim()});if(ok)setTimeout(()=>scanFolder(false),300);return ok}})}
+function autoSync(){if(!canEdit())return;{const c=formsCfg();if(c.folderId&&!S.folderScanned&&(!c.scannedAt||Date.now()-c.scannedAt>30*60*1000)){S.folderScanned=true;scanFolder(true)}}S.forms.forEach(f=>{if(f.sheetId&&!S.autoSynced.has(f.id)&&(!f.syncedAt||Date.now()-f.syncedAt>30*60*1000)){S.autoSynced.add(f.id);syncForm(f.id,true)}})}
+
+/* ---------- responses (clean lists) ---------- */
+function formMeta(cols){const ix=re=>cols.findIndex(c=>re.test(c));
+  const ts=ix(/time ?stamp|submitted/i),email=ix(/e-?mail/i);let name=ix(/^(full )?name$|your name|player name|full name/i);if(name<0)name=ix(/name/i);
+  const fn=ix(/first name/i),ln=ix(/last name/i);return {ts,email,name,fn,ln}}
+function respName(r,m,i){if(m.fn>=0||m.ln>=0){const n=[r[m.fn]||'',r[m.ln]||''].join(' ').trim();if(n)return n}if(m.name>=0&&r[m.name])return r[m.name];if(m.email>=0&&r[m.email])return r[m.email];return `Response ${i+1}`}
+function vResponses(){
+  const forms=[...S.forms].sort((a,b)=>(b.syncedAt||b.importedAt||0)-(a.syncedAt||a.importedAt||0));
+  if(S.formSel&&!forms.some(f=>f.id===S.formSel))S.formSel=null;
+  const f=forms.find(x=>x.id===S.formSel)||forms[0];
+  let body='';
+  if(f){
+    const cols=Array.isArray(f.columns)?f.columns:[];const all=(Array.isArray(f.rows)?f.rows.filter(Array.isArray):[]).map((r,i)=>({r,i}));const m=formMeta(cols);
+    let list=all;
+    if(S.formLatest){const seen=new Map();all.forEach(x=>{const k=String((m.email>=0&&x.r[m.email])||respName(x.r,m,x.i)).trim().toLowerCase();seen.set(k,x)});list=[...seen.values()]}
+    if(S.formFilter&&S.formFilter.form===f.id)list=list.filter(x=>String(x.r[S.formFilter.i]||'').trim()===S.formFilter.v);
+    if(S.formQ){const q=S.formQ.toLowerCase();list=list.filter(x=>x.r.join(' ').toLowerCase().includes(q))}
+    list=[...list].reverse();
+    const skip=new Set([m.ts,m.name,m.fn,m.ln].filter(i=>i>=0));
+    const summ=cols.map((c,i)=>{const cnt={};all.forEach(x=>{const v=String(x.r[i]||'').trim();if(v)cnt[v]=(cnt[v]||0)+1});return {c,i,cnt,keys:Object.keys(cnt)}}).filter(s=>s.keys.length>=2&&s.keys.length<=8&&!skip.has(s.i)&&s.i!==m.email);
+    const last=m.ts>=0&&all.length?all[all.length-1].r[m.ts]:'';
+    const syncLine=f.sheetId?`${S.syncing[f.id]?'Syncing…':f.syncedAt?'Synced '+new Date(f.syncedAt).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'Not synced yet'} · from Google Sheets`:`Imported ${f.importedAt?new Date(f.importedAt).toLocaleDateString('en-US',{month:'short',day:'numeric'}):''} from a file`;
+    const card=x=>{const r=x.r;const qa=cols.map((c,i)=>skip.has(i)||i===m.email?null:[c,String(r[i]||'').trim()]).filter(p=>p&&p[1]);
+      return `<div class="rcard"><div class="rh"><b>${esc(respName(r,m,x.i))}</b><small>${m.email>=0&&r[m.email]&&respName(r,m,x.i)!==r[m.email]?esc(r[m.email])+' · ':''}${m.ts>=0?esc(r[m.ts]||''):'#'+(x.i+1)}</small></div><dl>${qa.map(([q,a])=>`<dt>${esc(q)}</dt><dd>${esc(a)}</dd>`).join('')||'<dd class="sub">No answers</dd>'}</dl></div>`};
+    body=`<div class="card"><div class="ch"><h3>${esc(f.name)}</h3><span class="sub">${all.length} responses${last?' · latest '+esc(last):''} · ${syncLine}</span>
+      ${E(`<div style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">${f.sheetId?`<button class="btn sm pri" data-act="form-sync" data-id="${esc(f.id)}" type="button" ${S.syncing[f.id]?'disabled':''}>${S.syncing[f.id]?'Syncing…':'Sync now'}</button><a class="btn sm" href="${esc(f.sheetUrl||'https://docs.google.com/spreadsheets/d/'+f.sheetId)}" target="_blank" rel="noopener">${ic('ext')}Sheet</a>`:`<button class="btn sm" data-act="form-link" data-id="${esc(f.id)}" type="button">${ic('link')}Link Google Sheet</button><button class="btn sm" data-act="reimport" data-id="${esc(f.id)}" type="button">Replace with new export</button>`}<button class="btn sm danger" data-act="del-form" data-id="${esc(f.id)}" type="button">${ic('trash')}Delete</button></div>`)}</div>
+      ${S.syncMsg[f.id]?`<div class="banner" style="margin-bottom:12px">${esc(S.syncMsg[f.id])}</div>`:''}
+      ${summ.length?`<div class="summ" style="margin-bottom:16px">${summ.slice(0,6).map(s=>{const tot=Object.values(s.cnt).reduce((a,b)=>a+b,0);const mx=Math.max(...Object.values(s.cnt));return `<div class="card" style="padding:14px"><h5>${esc(s.c)}</h5><div class="bars">${Object.entries(s.cnt).sort((a,b)=>b[1]-a[1]).map(([k,v])=>{const on=S.formFilter&&S.formFilter.form===f.id&&S.formFilter.i===s.i&&S.formFilter.v===k;return `<button type="button" class="brow fbtn ${on?'on':''}" style="grid-template-columns:110px 1fr 54px" data-ff="${esc(f.id)}|${s.i}" data-fv="${esc(k)}" title="Show only “${esc(k)}”"><span class="nm">${esc(k)}</span><span class="bt"><i style="width:${(v/mx*100).toFixed(1)}%"></i></span><span class="bv">${v} <span class="sub">${Math.round(v/tot*100)}%</span></span></button>`}).join('')}</div></div>`}).join('')}</div>`:''}
+      <div class="toolbar" style="margin-bottom:12px"><input class="inp" id="formq" placeholder="Search responses" value="${esc(S.formQ)}" style="max-width:280px;border-radius:999px" aria-label="Search responses">
+        <div class="seg">${[['cards','List'],['table','Table']].map(([k,l])=>`<button type="button" class="${S.formView===k?'on':''}" data-fview="${k}">${l}</button>`).join('')}</div>
+        <label style="display:flex;gap:6px;align-items:center;font-size:13px"><input type="checkbox" id="flatest" ${S.formLatest?'checked':''}> Latest answer per person</label>
+        ${S.formFilter&&S.formFilter.form===f.id?`<button class="pill p-red" data-act="ff-clear" type="button" style="cursor:pointer">${esc(cols[S.formFilter.i]||'')}: ${esc(S.formFilter.v)} ${ic('x','width="11" height="11"')}</button>`:''}
+        <span class="sub">${list.length} shown</span></div>
+      ${S.formView==='table'?`<div class="rtwrap"><table class="t resptable"><thead><tr>${cols.map(c=>`<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>${list.map(x=>`<tr>${cols.map((c,i)=>`<td>${esc(x.r[i]||'')}</td>`).join('')}</tr>`).join('')||`<tr><td colspan="${cols.length||1}" class="sub">No matching responses.</td></tr>`}</tbody></table></div>`
+        :`<div class="rlist">${list.map(card).join('')||'<div class="empty">No matching responses.</div>'}</div>`}</div>`;
+  }
+  return `<div class="pagehead"><div><h2>Form responses</h2><p>Each Google Form gets its own clean list. Link a form’s response sheet once and new answers sync in automatically.</p></div><div class="spacer"></div>${E(`<button class="btn pri" data-act="import-form" type="button">${ic('plus')}Add a form</button>`)}</div>
+  ${isBoard()&&S.loaded.settings!==undefined?(()=>{const c=formsCfg();return `<div class="card" style="padding:14px 18px"><div class="ch" style="margin:0"><h3>${ic('link','width="14" height="14"')} Google Drive folder</h3>${c.folderId?`<span class="sub">${S.scanning?'Checking the folder…':c.scannedAt?`Checked ${new Date(c.scannedAt).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})} · ${c.found||0} sheet${c.found===1?'':'s'} found`:'Not checked yet'}</span>`:'<span class="sub">Not set. Point the dashboard at your forms folder and every response sheet shows up here.</span>'}
+    ${E(`<div style="margin-left:auto;display:flex;gap:6px">${c.folderId?`<button class="btn sm pri" data-act="folder-scan" type="button" ${S.scanning?'disabled':''}>Check folder now</button><a class="btn sm" href="${esc(c.folderUrl||'https://drive.google.com/drive/folders/'+c.folderId)}" target="_blank" rel="noopener">${ic('ext')}Folder</a>`:''}${Array.isArray(c.hidden)&&c.hidden.length?`<button class="btn sm" data-act="folder-hidden" type="button">Removed (${c.hidden.length})</button>`:''}<button class="btn sm" data-act="folder-set" type="button">${c.folderId?'Change folder':'Set folder'}</button></div>`)}</div>${S.scanMsg?`<div class="banner" style="margin-top:10px">${esc(S.scanMsg)}</div>`:''}</div>`})():''}
+  ${loadingOr('forms',`<div class="formtabs">${forms.map(x=>`<button type="button" class="formtab ${f&&x.id===f.id?'on':''}" data-form="${esc(x.id)}">${x.sheetId?ic('link','width="12" height="12" style="color:var(--good)"')+' ':''}${esc(x.name)}<small>${(Array.isArray(x.rows)?x.rows.length:0)} responses</small></button>`).join('')}</div>${body}`,'')}
+  ${!forms.length&&(S.loaded.forms||!S.db)?`<div class="card howto"><b>Connect a Google Form</b><ol><li>In Google Forms, open <b>Responses</b> and click <b>Link to Sheets</b> (or <b>View in Sheets</b>). Copy that sheet’s address.</li><li>Here, click <b>Add a form</b>, name it, and paste the sheet address.</li><li>The first time, Google asks you to allow read-only access to your sheets. After that, responses sync when a board member presses <b>Sync now</b> (and on opening this tab while that access is still fresh).</li></ol><p class="sub" style="margin:10px 0 0">No Google connection? You can still upload a .csv export or paste the cells.</p></div>`:''}`;
+}
+function linkForm(f){modal({title:`Link “${f.name}” to its Google Sheet`,submit:'Link and sync',body:`<div class="field"><label for="lk-url">Response sheet address</label><input class="inp" id="lk-url" name="url" required placeholder="https://docs.google.com/spreadsheets/d/…"></div>`,
+  onSubmit:async d=>{const id=sheetIdFrom(d.url);if(!id){toast('Paste the Google Sheet address (docs.google.com/spreadsheets/d/…).');return false}const ok=await updDoc('forms',f.id,{sheetId:id,sheetUrl:d.url.trim()});if(ok)setTimeout(()=>syncForm(f.id),50);return ok}})}
+
+/* ---------- forms (modals) ---------- */
+const opt=(arr,v)=>arr.map(o=>`<option ${o===v?'selected':''}>${esc(o)}</option>`).join('');
+const dl=()=>`<datalist id="peopleList2">${people().map(p=>`<option value="${esc(p)}"></option>`).join('')}</datalist>`;
+const teamSel=(name,v,withClub=true)=>`<select class="inp" id="f-${name}" name="${name}">${(withClub?['Club',...TEAMS]:TEAMS).map(t=>`<option value="${t}" ${(v||(withClub?'Club':S.team))===t?'selected':''}>${t==='Club'?'Whole club':t}</option>`).join('')}</select>`;
+function eventForm(e={},date){
+  modal({title:e.id?'Edit event':'Add event',submit:e.id?'Save changes':'Add event',body:`
+    <div class="field"><label for="f-title">Title</label><input class="inp" id="f-title" name="title" required maxlength="120" value="${esc(e.title||'')}" placeholder="Team practice"></div>
+    <div class="grid2"><div class="field"><label for="f-type">Type</label><select class="inp" id="f-type" name="type">${opt(Object.keys(EVTYPES),e.type||'Practice')}</select></div><div class="field"><label for="f-team">Team</label>${teamSel('team',e.team)}</div></div>
+    <div class="grid2"><div class="field"><label for="f-date">Date</label><input class="inp" type="date" id="f-date" name="date" required value="${esc(e.date||date||todayS())}"></div><div class="field"><label for="f-loc">Location</label><input class="inp" id="f-loc" name="location" maxlength="120" value="${esc(e.location||'')}" placeholder="Guy Lowman Field"></div></div>
+    <div class="grid2"><div class="field"><label for="f-start">Start (optional)</label><input class="inp" type="time" id="f-start" name="start" value="${esc(e.start||'')}"></div><div class="field"><label for="f-end">End (optional)</label><input class="inp" type="time" id="f-end" name="end" value="${esc(e.end||'')}"></div></div>
+    <div class="field"><label for="f-notes">Notes</label><textarea class="inp" id="f-notes" name="notes" maxlength="1000">${esc(e.notes||'')}</textarea></div>`,
+    onSubmit:async d=>{if(!d.title.trim()||!d.date){toast('Add a title and a date.');return false}const v={title:d.title.trim(),type:d.type,team:d.team,date:d.date,start:d.start||'',end:d.end||'',location:d.location.trim(),notes:d.notes.trim()};
+      const ok=e.id?await updDoc('events',e.id,v):await addDoc('events',v);if(ok){S.cal.sel=d.date;const dt=pd(d.date);S.cal.y=dt.getFullYear();S.cal.m=dt.getMonth();scheduleRender()}return ok}});
+}
+function deadlineForm(x={}){
+  modal({title:x.id?'Edit deadline':'Add deadline',submit:x.id?'Save changes':'Add deadline',body:`${dl()}
+    <div class="field"><label for="d-title">Deliverable</label><input class="inp" id="d-title" name="title" required maxlength="140" value="${esc(x.title||'')}" placeholder="Submit spring travel roster to NCBA"></div>
+    <div class="grid2"><div class="field"><label for="d-owner">Owner</label><input class="inp" id="d-owner" name="owner" list="peopleList2" maxlength="80" value="${esc(x.owner||'')}" placeholder="Treasurer"></div><div class="field"><label for="d-pri">Priority</label><select class="inp" id="d-pri" name="priority">${opt(PRI,x.priority||'Medium')}</select></div></div>
+    <div class="grid2"><div class="field"><label for="d-due">Due date</label><input class="inp" type="date" id="d-due" name="due" required value="${esc(x.due||'')}"></div><div class="field"><label for="d-time">Time (optional)</label><input class="inp" type="time" id="d-time" name="time" value="${esc(x.time||'')}"></div></div>
+    <div class="field"><label for="d-notes">Notes</label><textarea class="inp" id="d-notes" name="notes" maxlength="1500" placeholder="Links, who to send it to, what done looks like">${esc(x.notes||'')}</textarea></div>`,
+    onSubmit:d=>{if(!d.title.trim()||!d.due){toast('Add the deliverable and its due date.');return false}const v={title:d.title.trim(),owner:d.owner.trim(),priority:d.priority,due:d.due,time:d.time||'',notes:d.notes.trim()};return x.id?updDoc('deadlines',x.id,v):addDoc('deadlines',{...v,done:false})}});
+}
+function taskForm(t={}){
+  modal({title:t.id?'Edit task':'Add task',submit:t.id?'Save changes':'Add task',body:`${dl()}
+    <div class="field"><label for="t-title">Task</label><input class="inp" id="t-title" name="title" required maxlength="140" value="${esc(t.title||'')}" placeholder="Order new practice jerseys"></div>
+    <div class="grid2"><div class="field"><label for="t-who">Assigned to</label><input class="inp" id="t-who" name="assignee" list="peopleList2" maxlength="80" value="${esc(t.assignee||'')}"></div><div class="field"><label for="t-due">Due date</label><input class="inp" type="date" id="t-due" name="due" value="${esc(t.due||'')}"></div></div>
+    <div class="grid2"><div class="field"><label for="t-pri">Priority</label><select class="inp" id="t-pri" name="priority">${opt(PRI,t.priority||'Medium')}</select></div><div class="field"><label for="t-st">Status</label><select class="inp" id="t-st" name="status">${[['todo','To do'],['doing','In progress'],['done','Done']].map(([k,l])=>`<option value="${k}" ${(t.status||'todo')===k?'selected':''}>${l}</option>`).join('')}</select></div></div>
+    <div class="field"><label for="t-p">Progress: <span id="t-pv">${taskPct(t)}</span>%</label><input type="range" id="t-p" name="progress" min="0" max="100" step="5" value="${taskPct(t)}" style="accent-color:var(--red)"></div>`,
+    onSubmit:d=>{if(!d.title.trim()){toast('Name the task.');return false}let p=+d.progress,st=d.status;if(st==='done')p=100;else if(p===100)st='done';else if(p>0&&st==='todo')st='doing';
+      const v={title:d.title.trim(),assignee:d.assignee.trim(),due:d.due||'',priority:d.priority,status:st,progress:p};return t.id?updDoc('tasks',t.id,v):addDoc('tasks',v)}});
+  const r=$('#t-p');if(r)r.addEventListener('input',()=>{$('#t-pv').textContent=r.value});
+}
+function boardForm(b={}){
+  modal({title:b.id?'Edit board member':'Add board member',submit:b.id?'Save changes':'Add',body:`
+    <div class="field"><label for="b-name">Name</label><input class="inp" id="b-name" name="name" required maxlength="80" value="${esc(b.name||'')}"></div>
+    <div class="field"><label for="b-pk">Also on the roster as (for officer dues)</label><select class="inp" id="b-pk" name="playerKey"><option value="">Not on a roster</option>${[...allPeople().values()].sort((x,y)=>x.name.localeCompare(y.name)).map(p=>`<option value="${esc(p.key)}" ${b.playerKey===p.key?'selected':''}>${esc(first(p.name))} (${p.teams.join(' & ')})</option>`).join('')}</select></div>
+    <div class="grid2"><div class="field"><label for="b-role">Role</label><input class="inp" id="b-role" name="role" maxlength="60" value="${esc(b.role||'')}" placeholder="President" list="roleList"><datalist id="roleList">${['President','Vice President','Treasurer','Secretary','Travel Coordinator','Fundraising Chair','Social Chair','Equipment Manager','D1 Captain','D2 Captain'].map(r=>`<option value="${r}"></option>`).join('')}</datalist></div><div class="field"><label for="b-email">Email (optional)</label><input class="inp" type="email" id="b-email" name="email" maxlength="120" value="${esc(b.email||'')}"></div></div>`,
+    onSubmit:d=>{if(!d.name.trim()){toast('Add a name.');return false}const v={name:d.name.trim(),role:d.role.trim(),email:d.email.trim(),playerKey:d.playerKey||''};return b.id?updDoc('board',b.id,v):addDoc('board',v)}});
+}
+function annForm(){modal({title:'Post an announcement',submit:'Post',body:`<div class="field"><label for="a-text">Message</label><textarea class="inp" id="a-text" name="text" maxlength="1200" required placeholder="Practice moves to the Nick at 9 PM Thursday"></textarea></div>`,onSubmit:d=>{if(!d.text.trim()){toast('Write a message first.');return false}return addDoc('announcements',{text:d.text.trim()})}})}
+function scoutForm(opp){const id=`${S.team}-${slug(opp)}`;const ex=S.scouting.find(x=>x.id===id)||{};
+  modal({title:`Scouting notes: ${opp} (${S.team})`,submit:'Save notes',wide:true,body:`<div class="field"><label for="s-notes">Notes</label><textarea class="inp" id="s-notes" name="notes" maxlength="4000" style="min-height:200px" placeholder="Their Friday starter, who runs, field dimensions, what worked last time">${esc(ex.notes||'')}</textarea></div>`,
+  onSubmit:d=>upsert('scouting',id,{team:S.team,opponent:opp,notes:d.notes.trim()})})}
+function duesSettingsForm(){const c=duesCfg();
+  modal({title:'Dues settings',submit:'Save',body:`<div class="field"><label for="ds-label">Name</label><input class="inp" id="ds-label" name="label" maxlength="80" value="${esc(c.label||'Spring 2027 dues')}"></div>
+  <div class="grid2"><div class="field"><label for="ds-amt">Amount per player ($)</label><input class="inp" type="number" min="0" step="0.01" id="ds-amt" name="amount" value="${esc(c.amount??'')}" required></div><div class="field"><label for="ds-due">Due date</label><input class="inp" type="date" id="ds-due" name="due" value="${esc(c.due||'')}"></div></div>
+  <p class="sub" style="margin:0">Players can still have their own amount (for example a scholarship or a D1+D2 discount) from the Record button.</p>`,
+  onSubmit:d=>{const a=Number(d.amount);if(!(a>=0)){toast('Enter an amount.');return false}return upsert('settings','dues',{label:d.label.trim(),amount:a,due:d.due||''})}})}
+function duesForm(key,name){const r=S.dues.find(x=>x.id===key)||{};const c=duesCfg();const pl=plabel(key);const isOff=officerMap().has(key);const inPeople=allPeople().has(key);
+  modal({title:`Dues: ${first(name)}`,submit:'Save',body:`
+  <div class="grid2"><div class="field"><label for="du-paid">Total paid so far ($)</label><input class="inp" type="number" min="0" step="0.01" id="du-paid" name="paid" value="${esc(r.paid??'')}"></div><div class="field"><label for="du-owed">Amount owed ($)</label><input class="inp" type="number" min="0" step="0.01" id="du-owed" name="owed" value="${esc(r.owed??'')}" placeholder="${esc((isOff?c.officerAmount:c.amount)??'Default')}"></div></div>
+  ${inPeople?`<div class="grid2"><label style="display:flex;gap:8px;align-items:center;font-size:13px"><input type="checkbox" name="officer" ${isOff?'checked':''}> Club officer (pays the officer rate)</label><div class="field"><label for="du-role">Officer role</label><input class="inp" id="du-role" name="role" maxlength="60" value="${esc(pl.role||'')}" placeholder="Treasurer"></div></div>`:''}
+  <div class="grid2"><div class="field"><label for="du-method">Method</label><select class="inp" id="du-method" name="method">${opt(['','Venmo','Cash','Check','Zelle','PayPal','Other'],r.method||'')}</select></div><div class="field"><label for="du-date">Payment date</label><input class="inp" type="date" id="du-date" name="date" value="${esc(r.date||'')}"></div></div>
+  <label style="display:flex;gap:8px;align-items:center;font-size:13px"><input type="checkbox" name="waived" ${r.waived?'checked':''}> Waived (doesn’t owe dues this season)</label>
+  <div class="field"><label for="du-notes">Notes</label><input class="inp" id="du-notes" name="notes" maxlength="200" value="${esc(r.notes||'')}" placeholder="Paid half at tryouts"></div>`,
+  onSubmit:async d=>{const v={name,paid:d.paid===''?0:Number(d.paid)||0,owed:d.owed===''?null:Number(d.owed)||0,method:d.method||'',date:d.date||'',notes:d.notes.trim(),waived:!!d.waived};if(r.custom)v.custom=true;
+    if(inPeople&&(!!d.officer!==!!pl.officer||(d.role||'')!==(pl.role||''))){const ok=await upsert('players',key,{name,officer:!!d.officer,role:(d.role||'').trim(),labels:pl.labels||[]});if(!ok)return false}
+    return upsert('dues',key,v)}})}
+function labelForm(key,name){const pl=plabel(key);
+  modal({title:`Labels: ${first(name)}`,submit:'Save',body:`<label style="display:flex;gap:8px;align-items:center;font-size:14px"><input type="checkbox" name="officer" ${pl.officer?'checked':''}> Club officer <span class="sub">(pays the officer dues rate)</span></label>
+  <div class="field"><label for="lb-role">Officer role</label><input class="inp" id="lb-role" name="role" maxlength="60" value="${esc(pl.role||'')}" placeholder="Treasurer" list="roleList2"><datalist id="roleList2">${['President','Vice President','Treasurer','Secretary','Travel Coordinator','Fundraising Chair','Social Chair','Equipment Manager','D1 Captain','D2 Captain'].map(r=>`<option value="${r}"></option>`).join('')}</datalist></div>
+  <div class="field"><label for="lb-tags">Other labels (comma separated)</label><input class="inp" id="lb-tags" name="labels" maxlength="200" value="${esc((pl.labels||[]).join(', '))}" placeholder="Captain, Alumni contact, Equipment"></div>`,
+  onSubmit:d=>upsert('players',key,{name,officer:!!d.officer,role:(d.role||'').trim(),labels:(d.labels||'').split(',').map(s=>s.trim()).filter(Boolean).slice(0,8).map(s=>s.slice(0,30))})})}
+function duesAddForm(){modal({title:'Add a member to dues',submit:'Add',body:`<div class="field"><label for="da-name">Name</label><input class="inp" id="da-name" name="name" required maxlength="80" placeholder="Last, First or full name"></div><div class="field"><label for="f-team">Team</label>${teamSel('team','Club')}</div>`,
+  onSubmit:d=>{if(!d.name.trim()){toast('Add a name.');return false}const key='m-'+slug(d.name);return upsert('dues',key,{name:d.name.trim(),team:d.team==='Club'?'':d.team,custom:true,paid:0})}})}
+function sessionForm(s={}){
+  modal({title:s.id?'Edit session':`New ${S.team} session`,submit:s.id?'Save':'Create',body:`
+  <div class="grid2"><div class="field"><label for="se-title">Title</label><input class="inp" id="se-title" name="title" maxlength="80" value="${esc(s.title||'Practice')}"></div><div class="field"><label for="se-date">Date</label><input class="inp" type="date" id="se-date" name="date" required value="${esc(s.date||todayS())}"></div></div>
+  <div class="field"><label for="se-notes">Notes (optional)</label><input class="inp" id="se-notes" name="notes" maxlength="300" value="${esc(s.notes||'')}"></div>`,
+  onSubmit:async d=>{if(!d.date){toast('Pick a date.');return false}const v={title:d.title.trim()||'Practice',date:d.date,notes:d.notes.trim()};
+    if(s.id)return updDoc('attendance',s.id,v);let newId=null;const ok=await write(async()=>{const ref=await S.db.collection('attendance').add({...v,team:S.team,marks:{},createdAt:Date.now()});newId=ref.id});if(ok&&newId)S.sessSel[S.team]=newId;return ok}})}
+function tripForm(c={},prefill={}){const v={...prefill,...c};
+  modal({title:c.id?'Edit trip':'New carpool trip',submit:c.id?'Save':'Create trip',body:`
+  <div class="grid2"><div class="field"><label for="tr-title">Trip name</label><input class="inp" id="tr-title" name="title" required maxlength="100" value="${esc(v.title||'')}" placeholder="at Marquette"></div><div class="field"><label for="f-team">Team</label>${teamSel('team',v.team||'Club')}</div></div>
+  <div class="grid2"><div class="field"><label for="tr-date">Departure date</label><input class="inp" type="date" id="tr-date" name="date" value="${esc(v.date||'')}"></div><div class="field"><label for="tr-dep">Leave at</label><input class="inp" type="time" id="tr-dep" name="depart" value="${esc(v.depart||'')}"></div></div>
+  <div class="grid2"><div class="field"><label for="tr-meet">Meet at</label><input class="inp" id="tr-meet" name="meet" maxlength="100" value="${esc(v.meet||'')}" placeholder="Camp Randall lot 60"></div><div class="field"><label for="tr-dest">Destination</label><input class="inp" id="tr-dest" name="dest" maxlength="100" value="${esc(v.dest||'')}"></div></div>
+  <div class="field"><label for="tr-notes">Notes</label><textarea class="inp" id="tr-notes" name="notes" maxlength="800" style="min-height:70px">${esc(v.notes||'')}</textarea></div>`,
+  onSubmit:d=>{if(!d.title.trim()){toast('Name the trip.');return false}const data={title:d.title.trim(),team:d.team,date:d.date||'',depart:d.depart||'',meet:d.meet.trim(),dest:d.dest.trim(),notes:d.notes.trim()};
+    if(c.id)return updDoc('carpools',c.id,data);return addDoc('carpools',{...data,series:prefill.series||'',cars:[],needs:[]})}})}
+function carForm(trip,car={}){
+  modal({title:car.id?'Edit car':'Add a car',submit:car.id?'Save':'Add car',body:`${dl()}
+  <div class="grid2"><div class="field"><label for="ca-driver">Driver</label><input class="inp" id="ca-driver" name="driver" list="peopleList2" required maxlength="80" value="${esc(car.driver||'')}"></div><div class="field"><label for="ca-seats">Open seats (not counting driver)</label><input class="inp" type="number" min="0" max="12" id="ca-seats" name="seats" required value="${esc(car.seats??3)}"></div></div>
+  <div class="grid2"><div class="field"><label for="ca-from">Leaving from</label><input class="inp" id="ca-from" name="from" maxlength="80" value="${esc(car.from||'')}"></div><div class="field"><label for="ca-notes">Notes</label><input class="inp" id="ca-notes" name="notes" maxlength="160" value="${esc(car.notes||'')}" placeholder="Has room for bat bags"></div></div>`,
+  onSubmit:d=>{if(!d.driver.trim()){toast('Add the driver.');return false}const cars=(Array.isArray(trip.cars)?trip.cars:[]).map(x=>({...x,riders:[...(x.riders||[])]}));
+    const v={driver:d.driver.trim(),seats:Math.max(0,Math.min(12,Number(d.seats)||0)),from:d.from.trim(),notes:d.notes.trim()};
+    if(car.id){const i=cars.findIndex(x=>x.id===car.id);if(i>=0)cars[i]={...cars[i],...v}}else cars.push({id:'c'+Date.now().toString(36),riders:[],...v});
+    return updDoc('carpools',trip.id,{cars})}})}
+function parseDelimited(text){
+  text=text.replace(/^﻿/,'').replace(/\r\n?/g,'\n');const firstLine=text.split('\n')[0]||'';
+  const delim=(firstLine.match(/\t/g)||[]).length>(firstLine.match(/,/g)||[]).length?'\t':',';
+  const rows=[];let row=[],f='',q=false;
+  for(let i=0;i<text.length;i++){const c=text[i];
+    if(q){if(c==='"'){if(text[i+1]==='"'){f+='"';i++}else q=false}else f+=c}
+    else if(c==='"'&&f==='')q=true;else if(c===delim){row.push(f);f=''}else if(c==='\n'){row.push(f);rows.push(row);row=[];f=''}else f+=c}
+  if(f!==''||row.length){row.push(f);rows.push(row)}
+  return rows.filter(r=>r.some(c=>c.trim()!==''));
+}
+function importForm(existing){
+  modal({title:existing?`Replace “${existing.name}”`:'Add a form',submit:'Import',wide:true,body:`
+    <div class="field"><label for="i-name">Name for this response set</label><input class="inp" id="i-name" name="name" required maxlength="80" value="${esc(existing?.name||'')}" placeholder="Spring tryout sign-ups"></div>
+    ${existing?'':`<div class="field"><label for="i-sheet">Google Sheet with the form’s responses (syncs automatically)</label><input class="inp" id="i-sheet" name="sheet" placeholder="https://docs.google.com/spreadsheets/d/…"></div><p class="sub" style="margin:-4px 0 0">Or, without a Google connection:</p>`}
+    <div class="field"><label for="i-file">Upload the .csv export</label><input class="inp" type="file" id="i-file" accept=".csv,.tsv,text/csv,text/tab-separated-values" style="padding:8px"></div>
+    <div class="field"><label for="i-paste">Or paste the cells from Google Sheets</label><textarea class="inp" id="i-paste" name="paste" placeholder="Select all the cells in the responses sheet, copy, and paste here" style="min-height:140px;font-size:12.5px"></textarea></div>
+    <p class="sub" style="margin:0">The first row should be the question headers. Everyone who can open this dashboard will see the responses.</p>`,
+    onSubmit:async(d,form)=>{
+      if(!d.name.trim()){toast('Name the response set.');return false}
+      if(!existing&&d.sheet&&d.sheet.trim()){const sid=sheetIdFrom(d.sheet);if(!sid){toast('Paste the Google Sheet address (docs.google.com/spreadsheets/d/…).');return false}
+        let nid=null;const ok=await write(async()=>{const ref=await S.db.collection('forms').add({name:d.name.trim(),sheetId:sid,sheetUrl:d.sheet.trim(),columns:[],rows:[],importedAt:Date.now(),createdAt:Date.now()});nid=ref.id});
+        if(ok&&nid){S.formSel=nid;setTimeout(()=>syncForm(nid),300)}return ok}
+      let text=d.paste||'';const file=$('#i-file',form).files[0];if(file){try{text=await file.text()}catch(e){toast('That file could not be read.');return false}}
+      if(!text.trim()){toast('Paste a Google Sheet address, upload a .csv, or paste the cells.');return false}
+      const rows=parseDelimited(text);if(rows.length<2){toast('Need a header row and at least one response.');return false}
+      const columns=rows[0].map((c,i)=>c.trim()||`Column ${i+1}`);const body=rows.slice(1).map(r=>columns.map((_,i)=>String(r[i]??'').slice(0,2000)));
+      const v={name:d.name.trim(),columns,rows:body,importedAt:Date.now()};
+      if(JSON.stringify(v).length>240000){toast('That export is too large for one set. Split it into smaller sets.');return false}
+      const ok=existing?await write(()=>S.db.doc('forms/'+existing.id).set({...v,createdAt:existing.createdAt||Date.now()})):await write(async()=>{const ref=await S.db.collection('forms').add({...v,createdAt:Date.now()});S.formSel=ref.id});
+      if(ok)toast(`Imported ${body.length} responses.`);return ok}});
+}
+
+/* ---------- search + bell ---------- */
+function renderResults(){
+  const q=$('#q').value.trim().toLowerCase();const box=$('#results');if(!q){box.hidden=true;return}
+  const out=[];
+  TEAMS.forEach(t=>rosterOf(t).forEach(p=>{if((p.name+' '+p.num+' '+p.pos+' '+first(p.name)).toLowerCase().includes(q))out.push(['roster',`#${p.num||'–'} ${first(p.name)}`,`${t} roster`,first(p.name),null,t])}));
+  if(isBoard())S.deadlines.forEach(d=>{if((d.title+' '+(d.owner||'')).toLowerCase().includes(q))out.push(['deadlines',d.title,'Deadline'])});
+  if(isBoard())S.tasks.forEach(t=>{if((t.title+' '+(t.assignee||'')).toLowerCase().includes(q))out.push(['tasks',t.title,'Task'])});
+  if(isBoard())S.events.forEach(e=>{if((e.title+' '+(e.location||'')).toLowerCase().includes(q))out.push(['calendar',e.title,fmtD(e.date),null,e.date])});
+  TEAMS.forEach(t=>seriesList(t).forEach(s=>{if(s.opponent.toLowerCase().includes(q))out.push(['matchups',`${s.home?'vs':'at'} ${s.opponent}`,`${t} · ${s.week}`,null,null,t,s.week+'|'+s.opponent])}));
+  S.carpools.forEach(c=>{if((c.title||'').toLowerCase().includes(q))out.push(['carpools','Carpool: '+c.title,fmtD(c.date)])});
+  box.innerHTML=out.slice(0,12).map((r,i)=>`<button type="button" data-ri="${i}">${esc(r[1])}<small>${esc(r[2])}</small></button>`).join('')||'<div class="sub" style="padding:10px">No matches.</div>';
+  box.hidden=false;box._r=out;
+}
+$('#q').addEventListener('input',renderResults);
+$('#q').addEventListener('keydown',e=>{if(e.key==='Escape'){e.target.value='';renderResults()}if(e.key==='Enter'){const b=$('#results button');if(b)b.click()}});
+$('#results').addEventListener('click',e=>{const b=e.target.closest('[data-ri]');if(!b)return;const r=$('#results')._r[+b.dataset.ri];
+  if(r[5])setTeam(r[5],true);
+  if(r[0]==='roster'){S.rq=r[3];S.rpos='all';S.ryr='all'}if(r[0]==='calendar'&&r[4]){const dt=pd(r[4]);S.cal={y:dt.getFullYear(),m:dt.getMonth(),sel:r[4]}}
+  if(r[0]==='matchups'&&r[6])S.mSel[S.team]=r[6];
+  if(r[0]==='deadlines')S.dlFilter='all';$('#q').value='';$('#results').hidden=true;go(r[0])});
+document.addEventListener('click',e=>{if(!e.target.closest('#searchbox'))$('#results').hidden=true;if(!e.target.closest('#bell')&&!e.target.closest('#bellpop'))$('#bellpop').hidden=true});
+function renderBell(){const u=urgent();$('#bellpop').innerHTML=`<h4>Due within a week</h4>${u.length?u.map(d=>{const n=daysUntil(d.due);return `<div class="ditem" style="border-left-color:${n<0?'var(--bad)':n<=3?'var(--warn)':'var(--good)'}"><div><b>${esc(d.title)}</b><small>${esc(d.owner||'')}${d.owner?' · ':''}${fmtD(d.due)} · ${rel(n)}</small></div></div>`}).join(''):'<div class="sub" style="padding:4px">Nothing due in the next 7 days.</div>'}<button class="btn sm" data-nav="deadlines" type="button" style="align-self:flex-start">All deadlines</button>`}
+$('#bell').onclick=()=>{const p=$('#bellpop');p.hidden=!p.hidden;if(!p.hidden)renderBell()};
+function setTeam(t,silent){if(!TEAMS.includes(t))return;S.team=t;ss.set('bcb-team',t);S.rq='';if(!silent)renderAll()}
+
+/* ---------- event delegation ---------- */
+const find=(c,id)=>S[c].find(x=>x.id===id);
+const EDIT_ACTS=new Set(['add-event','edit-event','del-event','add-deadline','edit-deadline','del-deadline','toggle-dl','add-task','edit-task','del-task','task-move','add-board','edit-board','del-board','add-ann','del-ann','import-form','reimport','del-form','edit-scout','dues-settings','dues-add','dues-edit','dues-del','att-new','att-edit','att-del','att-allp','trip-new','trip-edit','trip-del','trip-from-series','car-add','car-edit','car-del','rider-del','need-del','odues-settings','odues-edit','refresh-request','src-edit','form-sync','form-link','folder-set','folder-scan','label-player','folder-hidden']);
+document.addEventListener('click',async e=>{
+  const nav=e.target.closest('[data-nav]');if(nav){$('#bellpop').hidden=true;go(nav.dataset.nav);return}
+  const tm=e.target.closest('[data-team]');if(tm){setTeam(tm.dataset.team);return}
+  const day=e.target.closest('[data-day]');if(day){S.cal.sel=day.dataset.day;renderAll();return}
+  const t=e.target.closest('[data-dlf]');if(t){S.dlFilter=t.dataset.dlf;renderAll();return}
+  const st=e.target.closest('[data-stab]');if(st){S.statTab=st.dataset.stab;renderAll();return}
+  const ns=e.target.closest('[data-nsort]');if(ns){const s=S.natSort||(S.natSort={k:'OPS',d:-1});const k=ns.dataset.nsort;if(s.k===k)s.d*=-1;else{s.k=k;s.d=(k==='team'||k==='conf'||NSC_LOW.has(k))?1:-1}renderAll();return}
+  const so=e.target.closest('[data-sort]');if(so){const s=S.sort[S.statTab];const k=so.dataset.sort;if(s.k===k)s.d*=-1;else{s.k=k;const lowGood=S.statTab==='pitching'&&['ERA','WHIP','L','H','R','ER','HR','BB','WPER9','HPER9','HBP','WP','BK'].includes(k);s.d=(k==='Player'||lowGood)?1:-1}renderAll();return}
+  const rp=e.target.closest('[data-rpos]');if(rp){S.rpos=rp.dataset.rpos;renderAll();return}
+  const ry=e.target.closest('[data-ryr]');if(ry){S.ryr=ry.dataset.ryr;renderAll();return}
+  const fm=e.target.closest('[data-form]');if(fm){S.formSel=fm.dataset.form;S.formQ='';S.formFilter=null;renderAll();return}
+  const ff=e.target.closest('[data-ff]');if(ff){const [fid,i]=ff.dataset.ff.split('|');const cur=S.formFilter;S.formFilter=cur&&cur.form===fid&&cur.i===+i&&cur.v===ff.dataset.fv?null:{form:fid,i:+i,v:ff.dataset.fv};renderAll();return}
+  const fv=e.target.closest('[data-fview]');if(fv){S.formView=fv.dataset.fview;renderAll();return}
+  const mu=e.target.closest('[data-matchup]');if(mu){S.mSel[S.team]=mu.dataset.matchup;go('matchups');return}
+  const df=e.target.closest('[data-duesf]');if(df){S.duesF=df.dataset.duesf;renderAll();return}
+  const dt=e.target.closest('[data-duest]');if(dt){S.duesT=dt.dataset.duest;renderAll();return}
+  const se=e.target.closest('[data-sess]');if(se){S.sessSel[S.team]=se.dataset.sess;renderAll();return}
+  const mk=e.target.closest('[data-mark]');if(mk){if(!canEdit())return;const s=find('attendance',mk.dataset.id);if(!s)return;const cur=(s.marks||{})[mk.dataset.key];const v=cur===mk.dataset.mark?'':mk.dataset.mark;updDoc('attendance',s.id,{marks:{[mk.dataset.key]:v}});return}
+  const a=e.target.closest('[data-act]');if(!a||a.matches('input'))return;const id=a.dataset.id;const act=a.dataset.act;
+  if(EDIT_ACTS.has(act)&&!canEdit()){toast(S.mode==='member'?'Members can view only. Enter the board password to make changes.':'Editing isn’t available with your current access.');return}
+  switch(act){
+    case 'add-event':return eventForm({},a.dataset.date);
+    case 'edit-event':return eventForm(find('events',id)||{});
+    case 'del-event':return confirmDel('this event',()=>delDoc('events',id));
+    case 'cal-prev':{let{y,m}=S.cal;m--;if(m<0){m=11;y--}S.cal.y=y;S.cal.m=m;return renderAll()}
+    case 'cal-next':{let{y,m}=S.cal;m++;if(m>11){m=0;y++}S.cal.y=y;S.cal.m=m;return renderAll()}
+    case 'cal-today':{const d=today();S.cal={y:d.getFullYear(),m:d.getMonth(),sel:todayS()};return renderAll()}
+    case 'add-deadline':return deadlineForm();
+    case 'edit-deadline':return deadlineForm(find('deadlines',id)||{});
+    case 'del-deadline':return confirmDel('this deadline',()=>delDoc('deadlines',id));
+    case 'toggle-dl':{const d=find('deadlines',id);if(d)updDoc('deadlines',id,{done:!d.done});return}
+    case 'add-task':return taskForm();
+    case 'edit-task':return taskForm(find('tasks',id)||{});
+    case 'del-task':return confirmDel('this task',()=>delDoc('tasks',id));
+    case 'task-move':{const tk=find('tasks',id);if(!tk)return;const order=['todo','doing','done'];const i=Math.max(0,Math.min(2,order.indexOf(tk.status||'todo')+(+a.dataset.dir)));const ns=order[i];
+      const p=ns==='done'?100:ns==='todo'?0:Math.min(95,Math.max(taskPct(tk),5));return updDoc('tasks',id,{status:ns,progress:p})}
+    case 'add-board':return boardForm();
+    case 'edit-board':return boardForm(find('board',id)||{});
+    case 'del-board':return confirmDel('this board member',()=>delDoc('board',id));
+    case 'add-ann':return annForm();
+    case 'del-ann':return confirmDel('this announcement',()=>delDoc('announcements',id));
+    case 'import-form':return importForm();
+    case 'reimport':return importForm(find('forms',id));
+    case 'del-form':{const f=find('forms',id);if(!f)return;return modal({title:`Remove “${f.name}” from the dashboard?`,submit:'Remove from dashboard',danger:true,body:`<p class="sub" style="margin:0">This only removes the list here. ${f.sheetId?'The Google Sheet, the Google Form and every response stay in your Google Drive untouched. The dashboard can only read from Google, never delete. ':''}${f.sheetId&&formsCfg().folderId?'The folder check will skip this sheet from now on, so it won’t come back. You can restore it later from the folder bar.':''}</p>`,
+      onSubmit:async()=>{if(f.sheetId){const c=formsCfg();const hid=Array.isArray(c.hidden)?c.hidden.filter(h=>h&&h.id!==f.sheetId):[];hid.push({id:f.sheetId,name:f.name});const ok=await upsert('settings','forms',{hidden:hid.slice(-200)});if(!ok)return false}return delDoc('forms',id)}})}
+    case 'form-sync':return syncForm(id);
+    case 'folder-set':return folderForm();
+    case 'label-player':return labelForm(a.dataset.key,a.dataset.name);
+    case 'folder-hidden':return hiddenForm();
+    case 'nat-toggle':S.natAll=!S.natAll;return renderAll();
+    case 'folder-scan':return scanFolder(false);
+    case 'form-link':{const f=find('forms',id);if(f)linkForm(f);return}
+    case 'ff-clear':S.formFilter=null;return renderAll();
+    case 'odues-settings':return oduesSettingsForm();
+    case 'odues-edit':return oduesForm(id);
+    case 'refresh-request':return refreshForm();
+    case 'sign-in':return signIn();
+    case 'sign-out':return signOutNow();
+    case 'import-backup':return importBackup();
+    case 'manage-editors':return manageEditors();
+    case 'src-edit':return srcForm();
+    case 'reload-data':toast('Reloading the latest data…');return loadData(true).then(()=>toast('Data reloaded.'));
+    case 'edit-scout':return scoutForm(a.dataset.opp);
+    case 'dues-settings':return duesSettingsForm();
+    case 'dues-add':return duesAddForm();
+    case 'dues-edit':return duesForm(a.dataset.key,a.dataset.name);
+    case 'dues-del':return confirmDel('this member from dues',()=>delDoc('dues',a.dataset.key));
+    case 'att-new':return sessionForm();
+    case 'att-edit':return sessionForm(find('attendance',id)||{});
+    case 'att-del':return confirmDel('this session',()=>delDoc('attendance',id));
+    case 'att-allp':{const s=find('attendance',id);if(!s)return;const m={};rosterOf(s.team).forEach(p=>{if(!(s.marks||{})[p.key])m[p.key]='P'});if(Object.keys(m).length)updDoc('attendance',id,{marks:m});return}
+    case 'trip-new':return tripForm();
+    case 'trip-edit':return tripForm(find('carpools',id)||{});
+    case 'trip-del':return confirmDel('this trip',()=>delDoc('carpools',id));
+    case 'trip-from-series':{const [tm,wk,op]=a.dataset.s.split('|');const s=seriesList(tm).find(x=>x.week===wk&&x.opponent===op);return tripForm({},{title:`at ${op}`,team:tm,date:s?s.start:'',dest:op,series:a.dataset.s})}
+    case 'car-add':return carForm(find('carpools',id)||{});
+    case 'car-edit':{const tr=find('carpools',id);if(!tr)return;return carForm(tr,(tr.cars||[]).find(c=>c.id===a.dataset.car)||{})}
+    case 'car-del':{const tr=find('carpools',id);if(!tr)return;return confirmDel('this car',()=>updDoc('carpools',id,{cars:(tr.cars||[]).filter(c=>c.id!==a.dataset.car)}))}
+    case 'rider-del':{const tr=find('carpools',id);if(!tr)return;const cars=(tr.cars||[]).map(c=>c.id===a.dataset.car?{...c,riders:(c.riders||[]).filter((_,i)=>i!==+a.dataset.i)}:c);return updDoc('carpools',id,{cars})}
+    case 'need-del':{const tr=find('carpools',id);if(!tr)return;return updDoc('carpools',id,{needs:(tr.needs||[]).filter((_,i)=>i!==+a.dataset.i)})}
+  }
+});
+document.addEventListener('submit',e=>{const f=e.target;
+  if(f.matches('[data-addrider]')){e.preventDefault();if(!canEdit())return;const [tid,cid]=f.dataset.addrider.split('|');const v=f.r.value.trim();if(!v)return;const tr=find('carpools',tid);if(!tr)return;
+    const cars=(tr.cars||[]).map(c=>c.id===cid?{...c,riders:[...(c.riders||[]),v.slice(0,80)]}:c);updDoc('carpools',tid,{cars});f.r.value='';return}
+  if(f.matches('[data-addneed]')){e.preventDefault();if(!canEdit())return;const tid=f.dataset.addneed;const v=f.r.value.trim();if(!v)return;const tr=find('carpools',tid);if(!tr)return;updDoc('carpools',tid,{needs:[...(tr.needs||[]),v.slice(0,80)]});f.r.value='';return}
+});
+document.addEventListener('change',e=>{const el=e.target;if(el.id==='flatest'){S.formLatest=el.checked;renderAll();return}if(el.matches('[data-act="task-pct"]')){if(!canEdit())return;const p=+el.value;const tk=find('tasks',el.dataset.id);if(!tk)return;
+  const st=p===100?'done':p===0?(tk.status==='done'?'doing':tk.status||'todo'):(tk.status==='todo'||tk.status==='done'?'doing':tk.status);updDoc('tasks',tk.id,{progress:p,status:st})}});
+document.addEventListener('input',e=>{const el=e.target;
+  if(el.matches('[data-act="task-pct"]')){const c=el.closest('.task');if(c){c.querySelector('.pc').textContent=el.value+'%';c.querySelector('.prog i').style.width=el.value+'%'}}
+  const deb=(k)=>{S[k]=el.value;clearTimeout(el._t);el._t=setTimeout(renderAll,150)};
+  if(el.id==='rq')deb('rq');if(el.id==='formq')deb('formQ');if(el.id==='duesq')deb('duesQ');
+});
+
+/* ---------- gate ---------- */
+function unlock(mode){S.mode=mode;$('#gate').hidden=true;$('#app').hidden=false;const v=location.hash.slice(1);S.view=VIEWS.some(x=>x[0]===v)?v:'overview';renderAll()}
+$('#gateform').onsubmit=async e=>{e.preventDefault();const v=$('#pw').value.trim().toLowerCase();const h=await sha(v);
+  const mode=h===PASSH.board?'board':h===PASSH.member?'member':null;
+  if(mode){ss.set('bcb-mode',mode);$('#gateerr').textContent='';$('#pw').value='';unlock(mode)}else{$('#gateerr').textContent='That password isn’t right. Ask a board member for it.';$('#pw').select()}};
+$('#lockbtn').onclick=()=>{ss.del('bcb-mode');S.mode=null;$('#app').hidden=true;$('#gate').hidden=false;$('#pw').value='';$('#pw').focus()};
+{const m=ss.get('bcb-mode');if(m==='board'||m==='member')unlock(m);}
+initCaps();
+})();
+
+</script>
+</body>
+</html>

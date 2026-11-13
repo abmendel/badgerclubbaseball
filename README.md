@@ -1,5 +1,7 @@
 # Badger Club Baseball HQ
 
+**Live site:** https://abmendel.github.io/badgerdash/
+
 The UW–Madison club baseball dashboard (NCBA D1 & D2): schedule, matchups, team and player stats, national ranks, roster, and the club board's calendar, deadlines, tasks, dues, attendance, carpools and form responses.
 
 Runs for free:
@@ -21,7 +23,7 @@ Runs for free:
 
 ## First-time setup
 
-Open the site with `#setup` at the end of the address (…/badgerclubbaseball/#setup) and choose the board and member passwords. It works only once; after that, change them in **Data refresh → Change passwords**.
+Open the site with `#setup` at the end of the address (abmendel.github.io/badgerdash/#setup) and choose the board and member passwords. It works only once; after that, change them in **Data refresh → Change passwords**.
 
 ## Handing off to next year's board
 

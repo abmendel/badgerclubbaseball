@@ -19,6 +19,10 @@ Runs for free:
 | `firestore.rules` | Security rules to paste into the Firebase console (Firestore → Rules). |
 | `assets/logo.png` | Logo. |
 
+## First-time setup
+
+Open the site with `#setup` at the end of the address (…/badgerclubbaseball/#setup) and choose the board and member passwords. It works only once; after that, change them in **Data refresh → Change passwords**.
+
 ## Handing off to next year's board
 
 Nothing to transfer: give the new board the board password and have them change it. To let them manage the Firebase project or this repo too, add them in Firebase (Project settings → Users and permissions) and GitHub (Settings → Collaborators).

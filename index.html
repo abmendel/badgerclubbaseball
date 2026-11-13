@@ -48,6 +48,7 @@ h1,h2,h3{text-wrap:balance;margin:0}
 .gatecard img{width:84px;height:auto;filter:drop-shadow(0 10px 20px rgba(var(--red-rgb),.3))}
 .gatecard h1{font-family:var(--display);font-size:34px;letter-spacing:.01em;line-height:1;text-transform:uppercase}
 .gatecard p{margin:0;color:var(--muted)}
+.gatecard form[hidden]{display:none}
 .gatecard form{display:flex;flex-direction:column;gap:10px;width:100%;margin-top:6px}
 .gatecard .err{color:var(--bad);font-size:13px;min-height:18px}
 
@@ -461,6 +462,15 @@ table.t{width:100%;border-collapse:collapse;font-size:13px}
       <div class="err" id="gateerr" role="alert"></div>
       <p class="hint">Board members use the board password. Club members use the member password to see the team tabs.</p>
     </form>
+    <form id="setupform" autocomplete="off" hidden>
+      <p class="sub" style="text-align:left;margin:0">First-time setup: choose the two passwords. This works only once; after that, change them from Data refresh.</p>
+      <label for="su-board" class="sub" style="text-align:left">Board password</label>
+      <input class="inp" id="su-board" type="password" autocomplete="new-password">
+      <label for="su-member" class="sub" style="text-align:left">Member password</label>
+      <input class="inp" id="su-member" type="password" autocomplete="new-password">
+      <button class="btn pri" id="setupbtn" type="submit" style="justify-content:center;height:42px">Create passwords</button>
+      <div class="err" id="setuperr" role="alert"></div>
+    </form>
   </div>
 </div>
 
@@ -744,7 +754,7 @@ function renderAll(){
   if(!$('#bellpop').hidden)renderBell();
 }
 function go(v){if(!VIEWS.some(x=>x[0]===v)||!allowed(v))v='overview';S.view=v;if(location.hash!=='#'+v)history.replaceState(null,'','#'+v);renderAll();window.scrollTo({top:0})}
-addEventListener('hashchange',()=>{const v=location.hash.slice(1);if(v&&v!==S.view)go(v)});
+addEventListener('hashchange',()=>{if(!S.mode)return;const v=location.hash.slice(1);if(v&&v!=='setup'&&v!==S.view)go(v)});
 
 /* ---------- shared bits ---------- */
 const priPill=p=>{const v=PRI.includes(p)?p:'Medium';return `<span class="pill p-${v.toLowerCase()}">${v}</span>`};
@@ -1641,7 +1651,7 @@ document.addEventListener('input',e=>{const el=e.target;
 });
 
 /* ---------- gate ---------- */
-function unlock(mode){S.mode=mode;$('#gate').hidden=true;$('#app').hidden=false;const v=location.hash.slice(1);S.view=VIEWS.some(x=>x[0]===v)?v:'overview';renderAll()}
+function unlock(mode){S.mode=mode;if(location.hash==='#setup')history.replaceState(null,'',location.pathname);$('#gate').hidden=true;$('#app').hidden=false;const v=location.hash.slice(1);S.view=VIEWS.some(x=>x[0]===v)?v:'overview';renderAll()}
 function showGate(){S.mode=null;$('#app').hidden=true;$('#gate').hidden=false;$('#pw').value='';gateReady();$('#pw').focus()}
 function gateReady(){$('#gatebtn').disabled=false;$('#gatebtn').textContent='Enter dashboard';if(S.capsDone&&!S.db)$('#gateerr').textContent='The club database isn’t connected yet.'}
 $('#gateform').onsubmit=async e=>{e.preventDefault();const v=$('#pw').value.trim().toLowerCase();if(!v)return;
@@ -1652,6 +1662,24 @@ $('#gateform').onsubmit=async e=>{e.preventDefault();const v=$('#pw').value.trim
   catch(err){$('#gateerr').textContent=err&&err.code==='auth/too-many-requests'?'Too many tries. Wait a few minutes and try again.':'Couldn’t reach the club database. Check your connection.'}
   btn.disabled=false;btn.textContent='Enter dashboard'};
 $('#lockbtn').onclick=()=>lockNow();
+/* one-time setup (open the site with #setup): creates the board and member logins */
+function setupMode(){const on=location.hash==='#setup'&&!S.mode;$('#gateform').hidden=on;$('#setupform').hidden=!on}
+window.addEventListener('hashchange',setupMode);setupMode();
+$('#setupform').onsubmit=async e=>{e.preventDefault();const err=$('#setuperr'),btn=$('#setupbtn');err.textContent='';
+  const b=$('#su-board').value.trim().toLowerCase(),m=$('#su-member').value.trim().toLowerCase();
+  if(!FB){err.textContent=S.capsDone?'The club database isn’t connected yet.':'Still loading. Try again in a second.';return}
+  if(b.length<8||m.length<8){err.textContent='Both passwords need at least 8 characters.';return}
+  if(b===m){err.textContent='The board and member passwords must be different.';return}
+  btn.disabled=true;btn.textContent='Creating…';const F=FB.F;let made=0,exists=0;
+  try{
+    const a2=F.getAuth(F.initializeApp(FIREBASE_CONFIG,'setup'));
+    try{await F.createUserWithEmailAndPassword(a2,ACCT.member,m);await F.signOut(a2);made++}catch(x){if(x&&x.code==='auth/email-already-in-use')exists++;else throw x}
+    try{await F.createUserWithEmailAndPassword(FB.auth,ACCT.board,b);made++}catch(x){if(x&&x.code==='auth/email-already-in-use')exists++;else throw x}
+    if(exists===2)err.textContent='The passwords are already set up. Use the board password on the normal sign-in.';
+    else if(exists)err.textContent='One password was already set up. Use the existing passwords to sign in, then change them from Data refresh.';
+    else{history.replaceState(null,'',location.pathname);setupMode();toast('Passwords created.')}
+  }catch(x){const c=x&&x.code;err.textContent=c==='auth/operation-not-allowed'?'Turn on Email/Password sign-in in Firebase first.':c==='auth/too-many-requests'?'Too many tries. Wait a few minutes.':'Couldn’t create the passwords. Try again.'}
+  btn.disabled=false;btn.textContent='Create passwords'};
 initCaps();
 })();
 

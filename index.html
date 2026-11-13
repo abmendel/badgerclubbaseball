@@ -518,7 +518,7 @@ const BUILD='20261111-1700';
 const BOARD_COLS=['events','deadlines','tasks','dues','officerdues','forms'];
 const ACCT={board:'board@badgerclub.example',member:'member@badgerclub.example'};
 /* Firebase project settings (Project settings → Your apps → Web app). These identify the project and are safe to publish. */
-const FIREBASE_CONFIG=null;
+const FIREBASE_CONFIG={apiKey:'AIzaSyDm5tQ_cHacwFDjr3WmD3wkVw0n4Szk6p4',authDomain:'badger-club-baseball.firebaseapp.com',projectId:'badger-club-baseball',storageBucket:'badger-club-baseball.firebasestorage.app',messagingSenderId:'96767355004',appId:'1:96767355004:web:459f8686cdda473dc601f9'};
 const $=(s,r=document)=>r.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const pad=n=>String(n).padStart(2,'0');
